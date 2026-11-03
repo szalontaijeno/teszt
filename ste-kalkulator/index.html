@@ -1,0 +1,1265 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Okos STÉ Kalkulátor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: work-desk tool — search & classify on the left, the farm ledger and verdict on the right; stacks on phones. */
+:root{
+  --bg:#f3f5f1; --surface:#ffffff; --sunk:#e9ede6; --line:#d5dbd1; --fg:#18211d; --muted:#5b6862;
+  --accent:#1d5f52; --accent-ink:#ffffff; --accent-soft:#dcebe6;
+  --ok:#1f7a3d; --ok-soft:#dff3e5; --warn:#a15c00; --warn-soft:#fbecd5; --bad:#b3261e; --bad-soft:#fbe1de;
+  --hort:#7a4fa3; --anim:#2a6aa8;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"Cascadia Mono",Consolas,monospace;
+  --r:8px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#121815; --surface:#19211d; --sunk:#202a25; --line:#2f3b35; --fg:#e6ece8; --muted:#9aa8a1;
+  --accent:#5fb8a4; --accent-ink:#0d1512; --accent-soft:#1f3832;
+  --ok:#6fd08c; --ok-soft:#18321f; --warn:#f0b45a; --warn-soft:#3a2a12; --bad:#ff8a80; --bad-soft:#3d1a17;
+  --hort:#c3a1e6; --anim:#8ab8ea; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121815; --surface:#19211d; --sunk:#202a25; --line:#2f3b35; --fg:#e6ece8; --muted:#9aa8a1;
+  --accent:#5fb8a4; --accent-ink:#0d1512; --accent-soft:#1f3832;
+  --ok:#6fd08c; --ok-soft:#18321f; --warn:#f0b45a; --warn-soft:#3a2a12; --bad:#ff8a80; --bad-soft:#3d1a17;
+  --hort:#c3a1e6; --anim:#8ab8ea; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:15px/1.5 var(--f-body);padding-left:max(10px,env(safe-area-inset-left,0px));padding-right:max(10px,env(safe-area-inset-right,0px));padding-block:8px 24px}
+.wrap{max-width:1180px;margin:0 auto;display:grid;gap:16px}
+h1,h2,h3{margin:0;text-wrap:balance}
+h1{font-size:1.45rem;font-weight:700;letter-spacing:-.01em}
+h2{font-size:1rem;font-weight:600}
+.sub{color:var(--muted);font-size:.88rem}.ainote{margin:0 0 8px;padding:6px 10px;border-radius:8px;background:var(--sunk)}
+.mono{font-family:var(--f-mono);font-size:.82rem}
+.num{font-variant-numeric:tabular-nums}
+header.top{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:end;justify-content:space-between}
+.client{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+input,select,button{font:inherit;color:inherit}
+input[type=text],input[type=search],input[type=number],input[type=tel],input[type=email],select{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:7px 10px;min-width:0}
+input:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button{cursor:pointer;border-radius:6px;border:1px solid var(--line);background:var(--surface);padding:7px 12px;font-weight:500}
+button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+button.ghost{background:transparent}
+button:disabled{opacity:.55;cursor:default}
+.grid{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:16px;align-items:start}
+@media (max-width:900px){.grid{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:grid;gap:12px;min-width:0}
+.searchbox{display:flex;gap:8px}
+.searchbox input{flex:1;font-size:1.05rem;padding:10px 12px}
+.results{display:grid;gap:6px;max-height:520px;overflow:auto;padding-right:2px}
+.res{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;align-items:center;padding:9px 10px;border-radius:6px;background:var(--sunk)}
+.res .t{font-weight:600}
+.res .m{color:var(--muted);font-size:.84rem}
+.res .why{grid-column:1/-1;font-size:.84rem;color:var(--muted)}
+.tag{display:inline-block;font-size:.72rem;font-weight:600;letter-spacing:.03em;padding:1px 7px;border-radius:99px;vertical-align:1px;margin-left:4px;white-space:nowrap}
+.tag.h{background:color-mix(in srgb,var(--hort) 18%,transparent);color:var(--hort)}
+.tag.a{background:color-mix(in srgb,var(--anim) 18%,transparent);color:var(--anim)}
+.tag.p{background:var(--sunk);color:var(--muted);border:1px solid var(--line)}
+.tag.igaz{background:var(--warn-soft);color:var(--warn)}
+.ask{border:1px dashed var(--accent);border-radius:var(--r);padding:12px;display:grid;gap:8px;background:var(--accent-soft)}
+.ask .ans{display:grid;gap:8px}
+.ans .card{background:var(--surface);border-radius:6px;padding:10px;display:grid;gap:6px}
+.empty{color:var(--muted);font-size:.9rem;padding:8px 2px}
+/* verdict */
+.verdict{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 18px;align-items:center;padding:16px;border-radius:var(--r);border:1px solid var(--line);background:var(--surface)}
+.verdict .big{font-size:2.1rem;font-weight:700;letter-spacing:-.02em;line-height:1.1}
+.pill{display:inline-block;font-weight:700;font-size:.85rem;letter-spacing:.04em;padding:4px 10px;border-radius:99px}
+.st-ok{background:var(--ok-soft);color:var(--ok)}
+.st-low{background:var(--warn-soft);color:var(--warn)}
+.st-high{background:var(--bad-soft);color:var(--bad)}
+.st-none{background:var(--sunk);color:var(--muted)}
+.band{grid-column:1/-1;position:relative;height:14px;border-radius:7px;background:var(--sunk);margin-top:10px;overflow:hidden}
+.band .zone{position:absolute;top:0;bottom:0;background:color-mix(in srgb,var(--ok) 22%,transparent)}
+.band .mark{position:absolute;top:-3px;bottom:-3px;width:3px;border-radius:2px;background:var(--fg)}
+.bandlbl{grid-column:1/-1;display:flex;justify-content:space-between;font-size:.75rem;color:var(--muted)}
+.split{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:6px 16px;font-size:.84rem;color:var(--muted)}
+/* ledger */
+.tablewrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.9rem}
+th{font-size:.74rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600;text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:8px;border-bottom:1px solid var(--line);vertical-align:top}
+td.r,th.r{text-align:right}
+.qty{display:flex;gap:4px;align-items:center}
+.qty input{width:92px;text-align:right}
+.qty select{padding:7px 4px}
+.note{font-size:.78rem;color:var(--muted);margin-top:3px}
+.note.warn{color:var(--warn)}
+.x{border:none;background:transparent;color:var(--muted);padding:4px 8px;font-size:1.1rem;line-height:1}
+.x:hover{color:var(--bad)}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
+.banner{font-size:.85rem;padding:8px 12px;border-radius:6px;background:var(--warn-soft);color:var(--warn);display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.banner button{padding:3px 10px;font-size:.82rem}
+.need-m{display:none}
+@media (max-width:600px){.need{display:none}.need-m{display:block}.qty input{width:72px}td{padding:8px 4px}}
+.wrap{max-width:900px}
+.finder .searchbox input{font-size:1.15rem;padding:12px 14px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.chips button{padding:3px 10px;font-size:.85rem;border-radius:99px;background:var(--sunk)}
+.xl{display:inline-flex;align-items:baseline;gap:6px;font-weight:600;color:var(--accent);background:var(--accent-soft);border-radius:6px;padding:3px 9px;font-size:.88rem;white-space:nowrap}
+.res .act{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+.res .addc{padding:3px 9px;font-size:.8rem}
+details.calc>summary{cursor:pointer;list-style:none;display:flex;flex-wrap:wrap;gap:4px 12px;align-items:baseline}
+details.calc>summary::-webkit-details-marker{display:none}
+details.calc>summary::before{content:"▸";color:var(--muted);transition:transform .15s}
+details.calc[open]>summary::before{transform:rotate(90deg)}
+#sumMini{margin-left:auto}
+.calcbody{display:grid;gap:12px;margin-top:12px}
+.foot{font-size:.78rem;color:var(--muted);max-width:75ch}
+.foot a{color:var(--accent)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:8px 14px;border-radius:6px;font-size:.88rem}
+@media (prefers-reduced-motion:no-preference){.band .mark{transition:left .25s ease}}
+[hidden]{display:none!important}
+.wrap{max-width:1440px;gap:10px}
+.chat{display:grid;gap:12px}
+.chatlog{display:flex;flex-direction:column;gap:10px;max-height:calc(100vh - 250px);min-height:280px;overflow:auto;padding:4px}
+.msg{max-width:min(720px,92%);padding:10px 14px;border-radius:12px;line-height:1.5;overflow-wrap:anywhere}
+.msg.me{align-self:flex-end;background:var(--accent);color:var(--accent-ink);border-bottom-right-radius:4px}
+.msg.bot{align-self:flex-start;background:var(--sunk);border-bottom-left-radius:4px}
+.msg .items{display:grid;gap:6px;margin-top:10px}
+.done{display:flex;align-items:center;gap:8px;background:var(--ok-soft);color:var(--ok);border-radius:8px;padding:6px 10px;font-size:.88rem;font-weight:600}
+.done span{flex:1}.done.del{background:var(--sunk);color:var(--muted);font-weight:500}
+.done button{border:none;background:transparent;color:inherit;padding:0 4px;font-size:1.05rem;line-height:1;cursor:pointer}
+.done.gone{opacity:.6;text-decoration:line-through}
+.intro{display:grid;gap:6px;font-size:.8rem;line-height:1.45;color:var(--muted)}
+.intro strong{color:var(--fg)}
+.intro p{margin:0}
+.intro details{background:var(--accent-soft);border-radius:8px;padding:4px 10px;justify-self:start}
+.intro details[open]{justify-self:stretch}
+.intro summary{cursor:pointer;font-weight:600;color:var(--accent);font-size:.8rem}
+.intro ol{margin:4px 0 2px;padding-left:20px;display:grid;gap:1px;color:var(--fg)}
+.chathead{display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,300px);gap:10px;align-items:stretch}
+@media (max-width:700px){.chathead{grid-template-columns:1fr}}
+.welcome{background:var(--sunk);border-radius:12px;border-bottom-left-radius:4px;padding:8px 12px;font-size:.84rem;line-height:1.45}
+.chathead .minisum{align-content:center;gap:4px 8px;padding:8px 12px;font-size:.8rem}
+.chathead .minisum .sub{flex-basis:100%;font-size:.76rem}
+.chathead .minisum strong{font-size:1rem}
+.chathead .minisum .msbtns{margin-left:0;flex-basis:100%}
+.chathead .minisum button{padding:3px 9px;font-size:.78rem}
+.startchips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.startchips button{padding:3px 10px;border-radius:99px;background:var(--surface);font-size:.78rem}
+.finish{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px}
+.chip-item{display:flex;gap:10px;align-items:center;justify-content:space-between;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+.chip-item button{padding:5px 10px;font-size:.85rem;flex:none}
+.chatform{display:grid;gap:6px}
+.chatbtns{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.srcs{margin:0;line-height:1.6}.who{display:inline-flex;gap:6px;align-items:center;font-size:.85rem;font-weight:600}.who input{width:220px;padding:3px 8px;font-size:.85rem;font-weight:400}.jump{display:inline-flex;gap:6px;align-items:center;flex-wrap:wrap}.jump button{padding:3px 10px;font-size:.8rem;border-radius:99px;background:var(--accent-soft);border-color:color-mix(in srgb,var(--accent) 35%,var(--line));color:var(--accent);font-weight:600}.minisum{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface)}.minisum .k{font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}.minisum strong{font-size:1.1rem}.minisum .pill{font-size:.75rem;padding:2px 8px}.minisum .msbtns{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}.minisum button{padding:4px 10px;font-size:.85rem}.tochat{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;justify-content:space-between;border-top:1px solid var(--line);padding-top:12px;font-size:.92rem}.readgrid{max-width:720px}
+#readRows select{max-width:220px;font-size:.82rem;padding:4px}
+.tagline{font-size:1.02rem;font-weight:600;color:var(--accent);margin-top:2px}
+.leadwrap{position:fixed;inset:0;z-index:20;background:color-mix(in srgb,var(--fg) 45%,transparent);display:grid;place-items:center;padding:16px;overflow:auto}
+.leadform{width:min(520px,100%);max-height:calc(100vh - 32px);overflow:auto;gap:10px}
+.leadform .lf{display:grid;gap:4px;font-size:.9rem}
+.leadform .lf input,.leadform .lf textarea{width:100%}
+.leadform .chk{display:flex;gap:8px;align-items:flex-start;font-size:.85rem}
+.leadform .chk input{margin-top:3px}
+.leadsum{background:var(--sunk);border-radius:6px;padding:8px 10px;font-size:.85rem}
+.foot{font-size:.78rem;color:var(--muted);max-width:90ch;margin:4px 0 0}
+body{margin:0}
+.toast button{background:transparent;color:inherit;border-color:currentColor}
+.readgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:16px;margin-top:12px}
+.readgrid .panel{align-content:start}
+.drop{display:grid;place-items:center;text-align:center;border:2px dashed var(--line);border-radius:var(--r);padding:22px 12px;cursor:pointer;background:var(--sunk);color:var(--muted)}
+.drop.over{border-color:var(--accent);background:var(--accent-soft)}
+.drop input{position:absolute;width:1px;height:1px;opacity:0}
+textarea{font:inherit;color:inherit;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:8px 10px;width:100%;resize:vertical}
+#readOut{margin-top:16px}
+#readRows input[type=text]{width:90px}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.tabs button{border:none;border-bottom:3px solid transparent;border-radius:0;background:transparent;padding:7px 14px;font-weight:600;color:var(--muted)}
+.tabs button[aria-selected="true"]{color:var(--fg);border-bottom-color:var(--accent)}
+.sumbar{display:flex;flex-wrap:wrap;gap:10px 22px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:8px 14px;position:sticky;top:env(safe-area-inset-top,0px);z-index:2}
+@media (max-width:700px){.sumbar{position:static}}
+.sumbar .k{font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.sumbar .v{font-weight:700;font-size:1.05rem}
+.sumbar .tot .v{font-size:1.5rem}
+.sumbar .tools{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.ste th,.ste td{padding:5px 8px;white-space:nowrap}
+.ste td.nm{white-space:normal;min-width:220px}
+.ste tr.grp td{background:var(--sunk);font-weight:600;font-size:.8rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.ste input{width:90px;text-align:right;padding:4px 8px;background:var(--ok-soft);border-color:color-mix(in srgb,var(--ok) 35%,var(--line))}
+.ste tr.filled td{background:color-mix(in srgb,var(--accent) 7%,transparent)}
+.ste tr.flash td{background:color-mix(in srgb,var(--accent) 28%,transparent)}
+@media (prefers-reduced-motion:no-preference){.ste tr td{transition:background .6s}}
+.ste .zero{color:var(--muted)}
+.ste .rowno{color:var(--muted);font-family:var(--f-mono);font-size:.78rem}
+.tablewrap.big{max-height:calc(100vh - 150px);min-height:320px;overflow:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--surface)}
+.tablewrap.big thead th{position:sticky;top:0;background:var(--surface);z-index:1}
+.write{display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.write input{width:84px;text-align:right;padding:5px 8px}
+.write select{padding:5px 4px}
+.write button{padding:5px 10px;font-size:.85rem}
+.res .act{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+.finder .searchbox input{font-size:1.15rem;padding:12px 14px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.chips button{padding:3px 10px;font-size:.85rem;border-radius:99px;background:var(--sunk)}
+.xl{display:inline-flex;align-items:baseline;gap:6px;font-weight:600;color:var(--accent);background:var(--accent-soft);border-radius:6px;padding:3px 9px;font-size:.88rem;white-space:nowrap}
+.filters{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+/* STÉ fül: sűrűbb táblázat, több sor fér el */
+#pane-ste table.ste{font-size:.82rem;line-height:1.25}
+#pane-ste .ste th{padding:4px 6px;font-size:.7rem}
+#pane-ste .ste td{padding:2px 6px;vertical-align:middle}
+#pane-ste .ste td.nm{min-width:200px}
+#pane-ste .ste .rowno{font-size:.72rem}
+#pane-ste .ste .mono{font-size:.76rem}
+#pane-ste .ste input{width:72px;padding:1px 6px;font-size:.82rem;line-height:1.3;border-radius:4px}
+#pane-ste .ste .note{font-size:.72rem;margin-top:1px}
+#pane-ste .ste td.sub{font-size:inherit}
+/* STÉ fül: kisebb összesítő sáv */
+.sumbar{padding:6px 12px;gap:6px 18px;font-size:.85rem}
+.sumbar .k{font-size:.66rem}
+.sumbar .v{font-size:.95rem}
+.sumbar .tot .v{font-size:1.25rem}
+.sumbar .tot .unit{font-size:.8rem;font-weight:600;color:var(--muted)}
+.sumbar .pill{font-size:.72rem;padding:2px 8px}
+.sumbar .sub{font-size:.78rem}
+.sumbar .tools{gap:6px}
+.sumbar.flash{box-shadow:0 0 0 3px var(--accent)}
+@media (prefers-reduced-motion:no-preference){.sumbar{transition:box-shadow .4s}}
+.sumbar .tools button{padding:4px 10px;font-size:.82rem}
+.filters label{display:flex;gap:6px;align-items:center;font-size:.9rem}
+</style>
+<div style="max-width:1440px;margin:0 auto 8px;font-size:.82rem;padding:6px 10px;border-radius:6px;background:var(--accent-soft);color:var(--accent)">Saját példány. A „Beszéljük meg” és a Feltöltések itt az Ön Claude-előfizetéséből fut, nem a weboldal API-keretéből.</div>
+
+
+<div class="wrap">
+  <div class="tabs" role="tablist">
+    <button type="button" role="tab" id="tab-chat" aria-selected="false" aria-controls="pane-chat" hidden>Beszéljük meg</button>
+    <button type="button" role="tab" id="tab-ste" aria-selected="true" aria-controls="pane-ste">STÉ</button>
+    <button type="button" role="tab" id="tab-read" aria-selected="false" aria-controls="pane-read">Feltöltések</button>
+  </div>
+
+  <section id="pane-ste" role="tabpanel" aria-labelledby="tab-ste" class="paneblock" style="display:grid;gap:12px">
+    <div class="sumbar">
+      <div class="tot"><div class="k">Összesen</div><div class="v num" id="sTot">0 € <span class="unit">STÉ</span></div></div>
+      <div><span class="pill st-none" id="sPill">NINCS ADAT</span><div class="sub" id="sMsg" style="margin-top:4px">Írja be a mennyiségeket a zöld oszlopba.</div></div>
+      <div><div class="k">Kertészet</div><div class="v num" id="sH">0 €</div></div>
+      <div><div class="k">Állat</div><div class="v num" id="sA">0 €</div></div>
+      <div><div class="k">Kert.+állat arány</div><div class="v num" id="sR">0%</div></div>
+      <div class="tools"><button type="button" class="primary elombtn" data-elom hidden>Ingyenes Előminősítést kérek</button><button id="reportBtn" type="button">STÉ Jelentés (PDF)</button><button id="clearBtn" type="button" class="ghost">Új számítás</button></div>
+    </div>
+    <div class="filters">
+      <label class="who" for="clientName"><span>Név:</span><input id="clientName" type="text" autocomplete="off" placeholder="az ügyfél neve" maxlength="80"></label>
+      <span class="jump"><span class="sub">Ugrás:</span><button type="button" data-jump="V0000_S0000TK">Zöldség</button><button type="button" data-jump="F1000T">Gyümölcs</button><button type="button" data-jump="A2010">Állat</button></span>
+      <label><input type="checkbox" id="onlyFilled"> Csak a kitöltött sorok</label>
+    </div>
+    <div class="tablewrap big">
+      <table class="ste">
+        <thead><tr><th>Sor</th><th>Termékkód</th><th>Ágazat</th><th>Termék megnevezése</th><th>Me.</th><th class="r">STÉ (Ft)</th><th class="r">Menny.</th><th class="r">STÉ (€)</th></tr></thead>
+        <tbody id="steBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="pane-chat" role="tabpanel" aria-labelledby="tab-chat" hidden>
+    <div class="panel chat">
+      <div class="intro">
+        <p>🤖 Itt <strong>mesterséges intelligencia (Claude) válaszol</strong>, de én, <strong>Szalontai Jenő pályázatíró</strong> készítettem és üzemeltetem: a pályázat hivatalos STÉ-táblázatából számol, az én szabályaim szerint. Beszéljen vele úgy, mintha velem beszélne. Amit mond, tájékoztatás, nem tanácsadás: a végeredményt én is átnézem, szakmai felelősséget a személyes egyeztetésünk után vállalok.</p>
+        <details id="howto"><summary>Hogyan működik?</summary>
+          <ol>
+            <li>Írja le a gazdaságát a saját szavaival.</li>
+            <li>Az MI addig kérdez, amíg minden tételt be nem tud sorolni.</li>
+            <li>Besorolja, és beírja a táblázatba.</li>
+            <li>Írja tovább, amíg van még növénye vagy állata.</li>
+            <li>Ha végzett, kattintson a „Nincs más” gombra: az MI lezárja a beszélgetést, és átviszi az STÉ fülre, ahol a számítását látja.</li>
+            <li>Ha az eredmény 5&nbsp;000 és 10&nbsp;000 euró között van, kattintson az „Ingyenes Előminősítést kérek” gombra.</li>
+            <li>A számítás átkerül az űrlapra. Adja meg az adatait, küldje el, és felhívom.</li>
+          </ol>
+        </details>
+      </div>
+      <div class="chathead"><div id="chatWelcome" class="welcome"></div>
+      <div class="minisum"><span class="k">STÉ összesen</span> <strong class="num" data-ms="tot">0 €</strong> <span class="pill st-none" data-ms="pill">NINCS ADAT</span> <span class="sub" data-ms="msg"></span><span class="msbtns"><button type="button" class="primary elombtn" data-elom hidden>Ingyenes Előminősítést kérek</button><button type="button" class="ghost" data-goste>STÉ fül</button></span></div></div>
+      <div id="chatLog" class="chatlog" aria-live="polite"></div>
+      <form id="chatForm" class="chatform">
+        <label for="chatIn" class="sub">Üzenet</label>
+        <textarea id="chatIn" rows="2" placeholder="pl. van 20 marhám, 2 hektár almám és pár méhcsaládom"></textarea>
+        <div class="chatbtns">
+          <button type="submit" class="primary">Küldés</button>
+          <button type="button" id="chatStop" hidden>Állj</button>
+          <span class="sub">Enter: küldés · Shift+Enter: új sor</span>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <section id="pane-read" role="tabpanel" aria-labelledby="tab-read" hidden>
+    <div class="readgrid">
+      <div class="panel">
+        <h2>STÉ-t számítok</h2>
+        <p class="srcs"><strong>Egységes Kérelem</strong>, <strong>Kormányhivatali Igazolás</strong>, <strong>ENAR Egyedleltár</strong>, <strong>Állatorvosi Igazolás</strong> alapján.</p>
+        <p class="sub ainote">🤖 Mesterséges intelligencia (Claude) olvassa ki az adatokat – kérjük, ellenőrizze. Döntés előtt egyeztessen Szalontai Jenővel, a Kalkulátor készítőjével és üzemeltetőjével.</p>
+        <label class="drop" id="drop" for="file">
+          <input id="file" type="file" accept=".pdf,image/jpeg,image/png,image/webp">
+          <span id="fileName"><strong>Fájl kiválasztása</strong> vagy ide húzhatja<br><span class="sub">PDF vagy fénykép (JPG, PNG). A dokumentum típusát Claude felismeri.</span></span>
+        </label>
+        <button id="readFileBtn" class="primary" type="button" disabled>Beolvasás</button>
+        <div class="tochat"><span>Ha valamiről nincs dokumentuma, mondja el a „Beszéljük meg” fülön.</span><button type="button" id="goChat">Beszéljük meg</button></div>
+      </div>
+    </div>
+    <div id="readStatus" class="empty" aria-live="polite"></div>
+    <div id="readOut" class="panel" hidden>
+      <div class="bar">
+        <h2>Kiolvasott tételek</h2>
+        <div class="sub" id="readMeta"></div>
+      </div>
+      <div id="readWarn"></div>
+      <div class="tablewrap">
+        <table class="ste">
+          <thead><tr><th></th><th>Sor</th><th>Termékkód</th><th>Megnevezés</th><th id="readHelyTh">Hely / forrás</th><th class="r">Menny.</th><th>Me.</th><th class="r">STÉ (€)</th></tr></thead>
+          <tbody id="readRows"></tbody>
+          <tfoot><tr><td colspan="7" class="r"><strong>A kijelölt tételek összesen</strong></td><td class="r num"><strong id="readSum">0 €</strong></td></tr></tfoot>
+        </table>
+      </div>
+      <div class="bar">
+        <div class="filters">
+          <label><input type="radio" name="wmode" value="replace" checked> Az STÉ fület előbb kiüríti</label>
+          <label><input type="radio" name="wmode" value="add"> Hozzáadja a meglévőkhöz</label>
+        </div>
+        <button id="applyBtn" class="primary" type="button">Beírom az STÉ fülre</button>
+      </div>
+      <p class="sub">Ellenőrizze a kiolvasott számokat az eredeti dokumentummal. A mennyiség cellák javíthatók, a pipával kihagyhat sorokat.</p>
+    </div>
+  </section>
+</div>
+<div id="leadWrap" class="leadwrap" hidden>
+  <form id="leadForm" class="panel leadform" novalidate>
+    <div class="bar"><h2>Visszahívást kérek</h2><button type="button" class="ghost" id="leadClose" aria-label="Bezárás">×</button></div>
+    <p class="sub">Szakértőnk átnézi a számítást, és visszahívja. Az STÉ-összesítőt automatikusan csatoljuk.</p>
+    <div id="leadSum" class="leadsum"></div>
+    <label class="lf"><span>Név *</span><input id="lName" type="text" autocomplete="name" required></label>
+    <label class="lf"><span>Telefonszám *</span><input id="lPhone" type="tel" autocomplete="tel" placeholder="+36 30 123 4567" required></label>
+    <label class="lf"><span>E-mail-cím *</span><input id="lEmail" type="email" autocomplete="email" required></label>
+    <label class="lf"><span>Település</span><input id="lCity" type="text" autocomplete="address-level2"></label>
+    <label class="lf"><span>Mit szeretne fejleszteni?</span><textarea id="lNote" rows="3" placeholder="pl. fóliasátor, traktor, hűtőkamra"></textarea></label>
+    <label class="chk"><input id="lConsent" type="checkbox" required> <span>Hozzájárulok, hogy a Szalontai Kft. a megadott adataimat és a számítást a visszahívás és a pályázati ajánlat céljából kezelje. <a id="privacyLink" href="#" target="_blank" rel="noopener">Adatkezelési tájékoztató</a> *</span></label>
+    <label class="chk"><input id="lNews" type="checkbox"> <span>Kérek e-mailben értesítést a pályázati lehetőségekről (bármikor leiratkozhatok).</span></label>
+    <div id="leadMsg" class="sub" aria-live="polite"></div>
+    <div class="bar"><span class="sub">* kötelező</span><button id="leadSend" type="submit" class="primary">Küldés</button></div>
+  </form>
+</div>
+<div id="toast" class="toast" hidden></div>
+
+<script>
+const DATA = {"p":[["C1110T","Közönséges búza és tönköly","ha",365892,"Növénytermesztés",0],["C1120T","Durumbúza","ha",428702,"Növénytermesztés",0],["C1200T","Rozs","ha",190390,"Növénytermesztés",0],["C1300T","Árpa","ha",344638,"Növénytermesztés",0],["C1400T","Zab","ha",184449,"Növénytermesztés",0],["C1500T","Szemeskukorica","ha",418328,"Növénytermesztés",0],["C1600T_C1700T_C1900T","Tritikálé, cirok és egyéb máshova nem sorolt gabonafélék (hajdina, köles, kanári mag stb.)","ha",238669,"Növénytermesztés",0],["C2000T","Rizs","ha",478418,"Növénytermesztés",0],["P0000T","Száraz hüvelyesek: borsón, lóbabon és édes csillagfürtön kívül","ha",290419,"Növénytermesztés",0],["P1000T","Száraz hüvelyesek: borsó, bab és édes csillagfürt","ha",289944,"Növénytermesztés",0],["R1000T","Burgonya (vetőburgonya is)","ha",3392685,"Kertészet",1],["R2000T","Cukorrépa (kivéve vetőmag)","ha",585582,"Növénytermesztés",0],["R9000T","Takarmánygyökerek és káposzták","ha",642362,"Növénytermesztés",0],["I1110T","Káposztarepce és réparepce","ha",421707,"Növénytermesztés",0],["I1120T","Napraforgó","ha",387177,"Növénytermesztés",0],["I1130T","Szója","ha",375602,"Növénytermesztés",0],["I1140T","Lenmag (olajlen)","ha",403804,"Növénytermesztés",0],["I1190T","Máshova nem sorolt egyéb olajos magvúak","ha",354384,"Növénytermesztés",0],["I2200T","Kender","ha",348151,"Növénytermesztés",0],["I3000T","Dohány","ha",813667,"Növénytermesztés",0],["I4000T","Komló","ha",2660689,"Növénytermesztés",0],["I5000T","Aromanövények, gyógyhatású és fűszernövények","ha",1073772,"Kertészet",1],["I6000T_I9000T","Egyéb, máshová nem sorolt energia és ipari növények","ha",288000,"Növénytermesztés",0],["G1000T","Időszaki gyep","ha",51571,"Növénytermesztés",0],["G2000T","Takarmánynövények - Zölden betakarított hüvelyesek","ha",95753,"Növénytermesztés",0],["G3000T","Silókukorica","ha",340103,"Növénytermesztés",0],["G9100T_G9900T","Takarmánynövények - Egyéb zölden betakarított gabonafélék (kivéve silókukorica)","ha",207023,"Növénytermesztés",0],["V0000_S0000TK","Kertészeti növényekkel vetésforgóban termesztett friss zöldségfélék (dinnyével együtt) és szamóca (árutermelő kertészet)","ha",3627233,"Kertészet",1],["V0000_S0000TO","Szántóföldi növényekkel vetésforgóban termesztett friss zöldségfélék (dinnyével együtt) és szamóca (szabadföldi termesztés)","ha",2325717,"Kertészet",1],["N0000T","Virágok és dísznövények (a faiskolákat kivéve, szabadföldi termesztés)","ha",12657556,"Kertészet",1],["E0000T","Szántóföldi szaporítóanyagok, magvak és palánták","ha",448175,"Növénytermesztés",0],["ARA99T_ARA09S","Egyéb szántóföldi növények","ha",235988,"Növénytermesztés",0],["J1000T","Legelő és rét, kivéve a külterjes legelőt","ha",41369,"Növénytermesztés",0],["J2000T","Külterjes legelő","ha",26031,"Növénytermesztés",0],["F1000T","Máshova nem sorolt gyümölcsültetvények","ha",1132981,"Kertészet",1],["F1100T","Almatermésűek","ha",1345669,"Kertészet",1],["F1200T","Csonthéjasok","ha",944704,"Kertészet",1],["F3000T","Bogyós gyümölcsök (kivéve szamóca)","ha",918082,"Kertészet",1],["F4000T","Héjasok","ha",526014,"Kertészet",1],["W1110T","Minőségi borszőlő ültetvények","ha",774934,"Kertészet",1],["W1190T","Egyéb borszőlő ültetvények","ha",697198,"Kertészet",1],["W1200T","Csemegeszőlő","ha",1031748,"Kertészet",1],["L0000T","Faiskolák (szabadföldi)","ha",6335334,"Kertészet",1],["PECR9_H9000T","Egyéb ültetvények","ha",4450694,"Kertészet",1],["X0000T","Karácsonyfa","ha",4410832,"Kertészet",0],["K0000T_UAA09S","Konyhakertek","ha",1869481,"Kertészet",0],["U1000","Termesztett gomba","100m²",5296725,"Kertészet",1],["V0000_S0000S","Zöldségfélék, dinnye és szamóca is, üvegházban, illetve más járható védőborítás (termesztőberendezés) alatt","ha",41191157,"Kertészet",1],["N0000S","Virágok és dísznövények üvegházban, illetve más járható védőborítás alatt","ha",56932230,"Kertészet",1],["PECRS","Ültetvények üvegházban, illetve más járható védőborítás (termesztőberendezés) alatt","ha",16605881,"Kertészet",1],["A2010","1 évesnél fiatalabb szarvasmarha","db",227074,"Állattenyésztés",0],["A2120","1 és 2 év közötti életkorú hímivarú szarvasmarha","db",233771,"Állattenyésztés",0],["A2220","1 és 2 év közötti életkorú üsző","db",84590,"Állattenyésztés",0],["A2130","Legalább kétéves hímivarú szarvasmarha","db",228025,"Állattenyésztés",0],["A2230","Legalább kétéves üsző","db",134283,"Állattenyésztés",0],["A2300","Kettős hasznú tehén","db",586226,"Állattenyésztés",0],["A2300F","Tejhasznú tehén","db",954600,"Állattenyésztés",0],["A2300G","Húshasznú tehén","db",99971,"Állattenyésztés",0],["A2410","Bivalytehén","db",470353,"Állattenyésztés",0],["A4110K","Anyajuhok","db",26774,"Állattenyésztés",0],["A4120","Egyéb juhok","db",47203,"Állattenyésztés",0],["A4210K","Anyakecskék","db",59950,"Állattenyésztés",0],["A4220","Egyéb kecskék","db",32118,"Állattenyésztés",0],["A3110","Sertés, 20 kilogrammnál kisebb élősúlyú malac","db",115173,"Állattenyésztés",0],["A3120","Sertés, legalább 50 kg-os tenyészkoca","db",393751,"Állattenyésztés",0],["A3130","Egyéb sertés","db",89395,"Állattenyésztés",0],["A5140","Brojlercsirke","100 db",478364,"Állattenyésztés",0],["A5110O","Tojótyúk","100 db",731632,"Állattenyésztés",0],["A5230","Pulyka","100 db",1397383,"Állattenyésztés",0],["A5210","Kacsa","100 db",742019,"Állattenyésztés",0],["A5220","Lúd","100 db",1485112,"Állattenyésztés",0],["A5410","Strucc","100 db",7900393,"Állattenyésztés",0],["A5240_5300","Máshova nem sorolt egyéb baromfi (gyöngytyúk, fürj, galamb)","100 db",1680118,"Állattenyésztés",0],["A6111","Nyúl, nőivarú tenyészállat","db",96238,"Állattenyésztés",0],["A6710R","Méhcsaládok","kaptár",32974,"Állattenyésztés",0],["C_8","Naposcsibe","100 db",178273,"Állattenyésztés",0],["C_9","Előnevelt csirke","100 db",631076,"Állattenyésztés",0],["C_10","Fácán","100 db",248473,"Állattenyésztés",0],["C_11","Fogoly","100 db",245787,"Állattenyésztés",0],["C_12","Emu","100 db",5868244,"Állattenyésztés",0],["C_13","Csincsilla, nőivarú tenyészállat","db",23977,"Állattenyésztés",0],["C_14","Dámszarvas","db",140043,"Állattenyésztés",0],["C_15","Gímszarvas","db",322862,"Állattenyésztés",0],["C_16","Muflon","db",125039,"Állattenyésztés",0],["C_17","Vaddisznó","db",89395,"Állattenyésztés",0],["C_18","Lófélék","db",332800,"Állattenyésztés",0]],"k":[["ABE01","Abesszin (etiópiai) mustár","I1190T"],["AGF02","Angyalgyökér (Angelika)","I5000T"],["AGF03","Kamilla","I5000T"],["AGF05","Digitalis","I5000T"],["AGF06","Tárnics","I5000T"],["AGF07","Izsóp","I5000T"],["AGF08","Jázmin","I5000T"],["AGF09","Levendula","I5000T"],["AGF10","Majoranna","I5000T"],["AGF11","Menta (egyéb)","I5000T"],["AGF12","Meténg (egyéb)","I5000T"],["AGF13","Utifű (Psyllium)","I5000T"],["AGF14","Sáfrány","I5000T"],["AGF15","Körömvirág","I5000T"],["AGF17","Macskagyökérfű","I5000T"],["AGF18","Tárkony","I5000T"],["AGF19","Fűszerkömény","I5000T"],["AGF20","Citromfű","I5000T"],["AGF21","Bazsalikom","I5000T"],["AGF22","Rozmaring","I5000T"],["AGF23","Lestyán","I5000T"],["AGF24","Szöszös ökörfarkkóró","I5000T"],["AGF25","Anyarozs","I5000T"],["AGF26","Kapor","I5000T"],["AGF28","Ánizs","I5000T"],["AGF29","Borsikafű (egyéb)","I5000T"],["AGF30","Koriander","I5000T"],["AGF31","Máriatövis","I5000T"],["AGF32","Kerti kakukkfű","I5000T"],["AGF33","Sáfrányos szeklice","I5000T"],["AGF35","Orvosi zsálya","I5000T"],["AGF36","Kerti ruta","I5000T"],["AGF37","Ánizsizsóp","I5000T"],["AGF38","Ánizsmenta","I5000T"],["AGF39","Bíbor kasvirág (Echinacea)","I5000T"],["AGF40","Cickafark","I5000T"],["AGF41","Oregánó (szurokfű)","I5000T"],["AGF44","Borágó","I5000T"],["AGF47","Gyermekláncfű","I5000T"],["AGF48","Jázminpakóca (stevia)","I5000T"],["ALL01","Állandó gyep (legeltetett)","J1000T"],["ALL02","Állandó gyep (kaszált)","J1000T"],["BUR01","Burgonya","R1000T"],["CUK01","Cukorrépa","R2000T"],["DBU01","Dohány- Burley","I3000T"],["DVI02","Dohány- Virginia","I3000T"],["EGY01","Egyéb szántóföldi termelt növény","A09S,C1110T,C1120T,C1200T,C1300T,C1400T,C1500T,C1600T_C1700T_C1900T,C2000T,E0000T,G1000T,G2000T,G3000T,G9100T_G9900T,I1110T,I1120T,I1130T,I1140T,I1190T,I2200T,I3000T,I4000T,I5000T,I6000T_I9000T,N0000T,"],["FAT01","Gyümölcsfaiskola","L0000T"],["FAT02","Szőlőoltvány-iskola","L0000T"],["FAT03","Dísznövény-, és erdészeti faiskola","L0000T"],["FLO01","Lágyszárú dísznövény","N0000T"],["FLO02","Dísznövény ültetvény","N0000T"],["FOR01","Lucerna","G2000T"],["FOR02","Lucerna erjesztett takarmány","G2000T"],["FOR03","Lucerna zöldtakarmány","G2000T"],["FOR04","Komlós lucerna","G2000T"],["FOR05","Sárkerep lucerna","G2000T"],["FOR06","Tarkavirágú lucerna","G2000T"],["FOR09","Vöröshere","G2000T"],["FOR10","Bíborhere","G2000T"],["FOR11","Fehérhere","G2000T"],["FOR12","Korcshere (svédhere)","G2000T"],["FOR13","Perzsahere (fonákhere)","G2000T"],["FOR14","Alexandriai here","G2000T"],["FOR15","Lódi lóhere","G2000T"],["FOR23","Sárgavirágú somkóró (orvosi somkóró)","G2000T"],["FOR24","Fehérvirágú somkóró","G2000T"],["FOR25","Takarmánybaltacim","G2000T"],["FOR27","Szarvaskerep","G2000T"],["FOR28","Nyúlszapuka","G2000T"],["FOR29","Szeradella","G2000T"],["FOR30","Koronás baltavirág","G2000T"],["FOR32","Réparepce","G9100T_G9900T"],["FOR33","Tifon","R9000T"],["FOR34","Tarlórépa","R9000T"],["FOR35","Takarmányrépa","R9000T"],["FOR36","Csicsóka","R9000T"],["FOR37","Murokrépa","R9000T"],["FOR38","Tarka koronafürt","G2000T"],["FOR39","Görög széna","G2000T"],["FOR40","Keleti kecskeruta","G2000T"],["FOR41","Mézontófű (Facélia)","G9100T_G9900T"],["FOR56","Füves lucerna","G9100T_G9900T"],["FOR57","Füves here","G9100T_G9900T"],["FOR58","Takarmánymályva","G9100T_G9900T"],["FOR59","Szilfium","G9100T_G9900T"],["FOR60","Lósóska","G9100T_G9900T"],["FRU01","Görögdinnye","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["FRU02","Tökre oltott görögdinnye","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["FRU03","Sárgadinnye","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["FRU04","Földieper (szamóca)","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["FRU05","Ribiszke","F3000T"],["FRU08","Málna","F3000T"],["FRU09","Piszke (köszméte/egres)","F3000T"],["FRU11","Szeder","F3000T"],["FRU12","Tüske nélküli szeder","F3000T"],["FRU13","Yosta (rikö)","F3000T"],["FRU14","Homoktövis","F3000T"],["FRU15","Fekete Bodza","F3000T"],["FRU16","Egyéb bodza","F3000T"],["FRU17","Áfonya","F3000T"],["FRU18","Berkenye","F3000T"],["FUM01","Füves mezsgye","-"],["GYE01","Ideiglenes gyep (legeltetett)","G1000T"],["GYE02","Ideiglenes gyep (kaszált)","G1000T"],["HAG01","Hagyományos gyümölcsös alma","F1100T"],["HAG03","Hagyományos gyümölcsös őszibarack","F1200T"],["HAG04","Hagyományos gyümölcsös kajszibarack (sárgabarack)","F1200T"],["HAG06","Hagyományos gyümölcsös szilva","F1200T"],["HAG07","Hagyományos gyümölcsös naspolya","F1100T"],["HAG08","Hagyományos gyümölcsös dió","F4000T"],["HAG09","Hagyományos gyümölcsös mogyoró","F4000T"],["HAG10","Hagyományos gyümölcsös mandula","F4000T"],["HAG11","Hagyományos gyümölcsös szelídgesztenye","F4000T"],["HAG12","Hagyományos gyümölcsös vegyes","F1000T"],["HAG15","Hagyományos gyümölcsös körte","F1100T"],["HAG16","Hagyományos gyümölcsös meggy","F1200T"],["HAG17","Hagyományos gyümölcsös cseresznye","F1200T"],["HAG18","Hagyományos gyümölcsös birs","F1100T"],["HAG19","Hagyományos gyümölcsös nektarin","F1200T"],["HAG20","Hagyományos gyümölcsös bodza","F3000T"],["HAG21","Hagyományos gyümölcsös homoktövis","F3000T"],["HAG22","Hagyományos gyümölcsös Áfonya","F3000T"],["HAG23","Hagyományos gyümölcsös Berkenye","F3000T"],["HAG24","Hagyományos gyümölcsös Fekete berkenye","F3000T"],["HAG25","Hagyományos gyümölcsös Fehér eperfa","F3000T"],["HAG26","Hagyományos gyümölcsös Fekete eperfa","F3000T"],["IND01","Szójabab","I1130T"],["IND03","Őszi káposztarepce","I1110T"],["IND04","Tavaszi káposztarepce","I1110T"],["IND06","Szezámmag","I1190T"],["IND07","Olajlen","I1140T"],["IND08","Rostlen","-"],["IND09","Földimogyoró","I1190T"],["IND11","Fehér mustár","I1190T"],["IND12","Fekete mustár","I1190T"],["IND13","Ricinus","I1190T"],["IND14","Mák (tavaszi)","I1190T"],["IND15","Retek","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["IND16","Olajretek","I1190T"],["IND18","Takarmányretek","R9000T"],["IND19","Négermag","I1190T"],["IND20","Vadrepce","I1190T"],["IND21","Gomborka (magvas)","I1190T"],["IND22","Cikória","I6000T_I9000T"],["IND23","Napraforgó","I1120T"],["IND24","Hibrid napraforgó","I1120T"],["KAL01","Őszi búza","C1110T"],["KAL02","Tavaszi búza","C1110T"],["KAL04","Őszi durumbúza","C1120T"],["KAL05","Tavaszi durumbúza","C1120T"],["KAL06","Őszi tönkölybúza","C1110T"],["KAL07","Tavaszi tönkölybúza","C1110T"],["KAL08","Őszi novum búza","C1110T"],["KAL09","Tavaszi novum búza","C1110T"],["KAL10","Őszi tönke búza","C1110T"],["KAL11","Tavaszi tönke búza","C1110T"],["KAL12","Őszi alakor búza","C1110T"],["KAL13","Tavaszi alakor búza","C1110T"],["KAL15","Rozs","C1200T"],["KAL16","Évelő rozs","G9100T_G9900T"],["KAL17","Őszi árpa","C1300T"],["KAL18","Tavaszi árpa","C1300T"],["KAL19","Tavaszi zab","C1400T"],["KAL20","Őszi zab","C1400T"],["KAL21","Kukorica","C1500T"],["KAL22","Pattogatni való kukorica","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["KAL23","Csemegekukorica","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["KAL24","Silókukorica","G3000T"],["KAL25","Hibrid kukorica","C1500T"],["KAL26","Tavaszi tritikálé","C1600T_C1700T_C1900T"],["KAL27","Őszi tritikálé","C1600T_C1700T_C1900T"],["KAL28","Pohánka (Hajdina)","C1600T_C1700T_C1900T"],["KAL29","Mohar","C1600T_C1700T_C1900T"],["KAL30","Cukorcirok","C1600T_C1700T_C1900T"],["KAL31","Seprűcirok","I6000T_I9000T"],["KAL32","Szemescirok","C1600T_C1700T_C1900T"],["KAL33","Silócirok","G9100T_G9900T"],["KAL34","Szudáni cirokfű","G9100T_G9900T"],["KAL35","Indiánrizs","C1600T_C1700T_C1900T"],["KAL36","Termesztett köles","C1600T_C1700T_C1900T"],["KAL37","Indiai köles","C1600T_C1700T_C1900T"],["KAL38","Fénymag","C1600T_C1700T_C1900T"],["KAL39","Fekete zab (homoki zab)","C1400T"],["KEN01","Kender","I2200T"],["KHK01","Konyhakertek","K0000T_UAA09S"],["KOM01","Komló","I4000T"],["MEH01","Méhlegelő","J2000T"],["NAD01","Nád","I6000T_I9000T"],["PAZ01","Ebtippan","G1000T"],["PAZ02","Óriás tippan","G1000T"],["PAZ03","Fehér tippan","G1000T"],["PAZ04","Cérnatippan","G1000T"],["PAZ05","Francia perje","G1000T"],["PAZ06","Csenkeszperje","G1000T"],["PAZ07","Olasz perje (szálkás perje)","G1000T"],["PAZ08","Angol perje","G1000T"],["PAZ09","Hibrid perje","G1000T"],["PAZ10","Ligeti perje","G1000T"],["PAZ11","Réti perje","G1000T"],["PAZ12","Mocsári perje","G1000T"],["PAZ13","Sovány perje","G1000T"],["PAZ14","Csomós ebír","G1000T"],["PAZ15","Nádképű csenkesz","G1000T"],["PAZ16","Juhcsenkesz","G1000T"],["PAZ17","Réti csenkesz","G1000T"],["PAZ18","Vörös csenkesz","G1000T"],["PAZ19","Gumós komócsin","G1000T"],["PAZ20","Réti komócsin","G1000T"],["PAZ21","Veresnadrág csenkesz","G1000T"],["PAZ22","Magyar rozsnok","G1000T"],["PAZ23","Zöld Pántlikafű","G1000T"],["PIH01","Talajtakarás nélküli pihentetett terület","-"],["PIL01","Cukorborsó","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["PIL02","Mezei borsó","P1000T"],["PIL03","Őszi takarmányborsó","P1000T"],["PIL04","Őszi zöldborsó","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["PIL05","Szárazborsó (Sárgaborsó)","P1000T"],["PIL06","Tavaszi takarmányborsó","P1000T"],["PIL07","Tavaszi zöldborsó","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["PIL09","Lóbab (Disznóbab)","P1000T"],["PIL11","Futóbab","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["PIL12","Szárazbab","P1000T"],["PIL13","Zöldbab","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["PIL14","Homoki bab (tehénborsó)","P0000T"],["PIL15","Fehérvirágú édes csillagfürt","P1000T"],["PIL16","Fehérvirágú édes csillagfürt (takarmány célra)","P1000T"],["PIL17","Fehérvirágú édes csillagfürt (zöldtrágyázásra)","-"],["PIL18","Sárgavirágú édes csillagfürt","P1000T"],["PIL19","Sárgavirágú édes csillagfürt (takarmány célra)","P1000T"],["PIL20","Sárgavirágú édes csillagfürt (zöldtrágyázásra)","-"],["PIL21","Kékvirágú édes csillagfürt","P1000T"],["PIL22","Kékvirágú édes csillagfürt (takarmány célra)","P1000T"],["PIL23","Kékvirágú édes csillagfürt (zöldtrágyázásra)","-"],["PIL24","Lencse","P0000T"],["PIL25","Takarmánybükköny (Tavaszi bükköny)","G2000T"],["PIL26","Szöszösbükköny","G2000T"],["PIL27","Pannonbükköny","G2000T"],["PIL29","Csicseriborsó","P0000T"],["PIL30","Szegletes lednek","P0000T"],["RIZ03","Rizs","C2000T"],["SZI01","Sziki kender","I2200T"],["UGA03","Zöldugar kultúra","-"],["ULT01","Alma","F1100T"],["ULT03","Őszibarack","F1200T"],["ULT04","Kajszibarack (sárgabarack)","F1200T"],["ULT05","Nektarin","F1200T"],["ULT06","Szilva","F1200T"],["ULT07","Naspolya","F1100T"],["ULT08","Dió","F4000T"],["ULT09","Mogyoró","F4000T"],["ULT10","Mandula","F4000T"],["ULT11","Szelídgesztenye","F4000T"],["ULT12","Vegyes gyümölcsös","F1000T"],["ULT15","Körte","F1100T"],["ULT16","Meggy","F1200T"],["ULT17","Cseresznye","F1200T"],["ULT18","Birs","F1100T"],["ULT19","Minőségi borszőlő ültetvény","W1110T"],["ULT20","Egyéb borszőlő szőlőültetvény","W1190T"],["ULT21","Füge","F3000T"],["ULT26","Csipkebogyó","F3000T"],["ULT27","Kivi","F3000T"],["ULT28","Egyéb ültetvény","F1000T;F3000T;F4000T;PECR9_H9000T,F1100T,F1200T"],["ULT29","Csemegeszőlő ültetvény","W1200T"],["ULT30","Fehér eperfa","F3000T"],["ULT31","Fekete eperfa","F3000T"],["ULT32","Fekete berkenye","F3000T"],["VEG01","Karfiol","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG02","Brokkoli","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG03","Bimbóskel","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG04","Fejes káposzta","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG05","Kelkáposzta","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG06","Vöröskáposzta","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG07","Takarmánykáposzta","R9000T"],["VEG08","Karalábé","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG09","Kínai kel","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG10","Zeller","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG11","Póréhagyma","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG12","Őszi fokhagyma","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG13","Tavaszi fokhagyma","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG14","Csemegehagyma","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG15","Őszi vöröshagyma","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG17","Lilahagyma","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG18","Metélőhagyma","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG19","Fejessaláta","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG20","Endívia","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG21","Sóska","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG22","Spenót","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG23","Spárga","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG24","Articsóka","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG25","Spanyol Articsóka","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG26","Petrezselyem gyökér (fehérrépa)","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG27","Petrezselyem levél","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG29","Rebarbara","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG30","Édeskömény (közönséges)","I5000T"],["VEG31","Galambbegysaláta","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG32","Zsázsa","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG33","Paradicsom","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG34","Uborka","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG35","Padlizsán (Tojásgyümölcs)","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG36","Főzőtök","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG37","Sütőtök","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG38","Káposztatök","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG39","Olajtök","I1190T"],["VEG40","Csillagtök/patiszon","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG41","Spárgatök","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG42","Cukkini","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG43","Paprika","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG44","Fűszerpaprika","I5000T"],["VEG45","Sárgarépa","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG46","Cékla","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG47","Feketegyökér","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG48","Torma","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG49","Pasztinák","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG50","Újzélandi spenót","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG51","Mezei csibehúr","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG52","Egyéb zöldség","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG53","Tavaszi vöröshagyma","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG54","Batáta (édesburgonya)","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG55","Borsmustár (rukkola)","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["MEL01","Meliorációs retek","-"],["ULT33","Datolyaszilva","F1000T"],["ULT34","Teacserje","I5000T"],["BMB01","Bambusz","PECR9_H9000T"],["FAT06","Gyepiskola (gyepszőnyeg)","N0000T"],["IND25","Mák (őszi)","I1190T"],["VEG56","Fűszer (édes) édeskömény vagy római édeskömény","I5000T"],["VEG57","Olasz édeskömény vagy gumós édeskömény","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["GOM01","Gomba","U1000"],["ULT35","Húsos som","F3000T"],["ULT36","Kökény","F3000T"],["KAR01","Karácsonyfa ültetvény","X0000T"],["FAT05","Fenyőfa-faiskola","L0000T"],["AGF49","Hibrid levendula (lavandin)","I5000T"],["AGF50","Fehér üröm","I5000T"],["AGF51","Római kamilla","I5000T"],["AGF52","Nagy csalán","I5000T"],["AGF53","Orbáncfű","I5000T"],["AGF54","Vasfű (Verbena)","I5000T"],["AGF55","Kisvirágú füzike","I5000T"],["AGF56","Orvosi pemetefű","I5000T"],["AGF57","Évelő borsfű (borsikafű)","I5000T"],["AGF58","Orvosi ziliz (fehérmályva)","I5000T"],["AGF59","Muskotály zsálya","I5000T"],["AGF60","Tavaszi kankalin","I5000T"],["AGF61","Kis télizöld meténg","I5000T"],["AGF62","Borsmenta","I5000T"],["AGF63","Csombormenta","I5000T"],["AGF64","Lómenta","I5000T"],["AGF65","Terjőke kígyószisz","I5000T"],["AGF66","Ligeti zsálya","I5000T"],["HAG27","Hagyományos gyümölcsös mézbogyó","F3000T"],["HAG28","Hagyományos gyümölcsös kökény","F3000T"],["HAG29","Hagyományos gyümölcsös galagonya","F3000T"],["FLO03","Pillangóvirág","igazolásos(N0000TvagyN0000S)"],["FRU19","Tökre oltott sárgadinnye","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["PIL31","Mogyorós lednek","P0000T"],["ULT37","Mézbogyó","F3000T"],["ULT38","Galagonya","F3000T"],["ULT39","Egybibés galagonya","F3000T"],["TAR10","Tarló","-"],["ULT40","Szőlőalany törzsültetvény (támberendezéssel)","L0000T"],["ULT41","Szőlőalany törzsültetvény (támberendezés nélkül)","L0000T"],["VAD01","Vadvirág (keverék)","-"]]};
+const RATE = 348.93, MIN = 5000, MAX = 10000;
+const P = {}; DATA.p.forEach(([code,name,unit,ft,sec,hort]) => P[code] = {code,name,unit,ft,sec,hort:!!hort});
+const EXCL = new Set(); /* kivett termékkódok (jelenleg nincs) */
+const WARN = {};
+const ROW = {}; DATA.p.forEach((p,i) => ROW[p[0]] = i + 4); /* Excel-sorszám a teljes listából */
+EXCL.forEach(c => delete P[c]);
+const ORDER = DATA.p.map(p => p[0]).filter(c => !EXCL.has(c));
+const ENAR = new Set(["A2010","A2120","A2220","A2130","A2230","A2300","A2300F","A2300G","A2410","A4110K","A4210K"]);
+const KH = new Set(["V0000_S0000TK","V0000_S0000TO","N0000T","N0000S","PECRS","U1000","V0000_S0000S"]);
+const COWS = ["A2300","A2300F","A2300G","A2410"];
+const norm = s => String(s).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z0-9 ]+/g," ").replace(/\s+/g," ").trim();
+/* Köznapi nevek → STÉ termékkód(ok). */
+const SYN = [
+ ["ribizli ribiszke feketeribizli piros ribizli fekete ribizli",["F3000T"],"Ribiszke (FRU05)"],
+ ["egres piszke koszmete",["F3000T"],"Piszke/köszméte (FRU09)"],
+ ["josta jostaberry riko",["F3000T"],"Yosta/rikö (FRU13)"],
+ ["aronia fekete berkenye berkenye",["F3000T"],"Fekete berkenye (ULT32)"],
+ ["afonya szeder malna bodza homoktovis mezbogyo kiwi kivi fuge csipkebogyo eperfa som kokeny galagonya",["F3000T"],"Bogyós gyümölcs"],
+ ["eper foldieper szamoca",["V0000_S0000TO","V0000_S0000TK"],"Szamóca: zöldségnek számít, igazolás kell"],
+ ["alma korte birs naspolya",["F1100T"],"Almatermésű"],
+ ["meggy cseresznye szilva kajszi sargabarack oszibarack barack nektarin ringlo",["F1200T"],"Csonthéjas"],
+ ["dio mogyoro mandula gesztenye",["F4000T"],"Héjas"],
+ ["vegyes gyumolcsos gyumolcsos",["F1000T","F1100T","F1200T"],"Gyümölcsös: fajtól függ"],
+ ["szolo bor borszolo",["W1110T","W1190T","W1200T"],"Szőlő"],
+ ["csemegeszolo",["W1200T"],"Csemegeszőlő"],
+ ["paprika paradicsom uborka hagyma vorshagyma fokhagyma kaposzta karfiol brokkoli sargarepa repa petrezselyem zeller cekla retek salata spenot cukkini tok patisszon padlizsan zoldbab zoldborso csemegekukorica sparga dinnye gorogdinnye sargadinnye zoldseg kel kelbimbo torma",["V0000_S0000TO","V0000_S0000TK"],"Szabadföldi zöldség, igazolás kell"],
+ ["folia foliasator uveghaz hajtatas termesztoberendezes",["V0000_S0000S","N0000S","PECRS"],"Fedett termesztés, igazolás kell"],
+ ["virag disznoveny vagott virag palanta",["N0000T","N0000S"],"Virág, igazolás kell"],
+ ["levendula kamilla menta citromfu majoranna kakukkfu bazsalikom oregano zsalya gyogynoveny fuszernoveny fuszer koriander kapor turkokemeny fuszerpaprika",["I5000T"],"Aroma-, gyógy- és fűszernövény"],
+ ["burgonya krumpli",["R1000T"],"Burgonya (kertészet)"],
+ ["buza tonkoly",["C1110T"],""],["kukorica szemes kukorica",["C1500T"],""],["silokukorica silo",["G3000T"],""],
+ ["arpa",["C1300T"],""],["zab",["C1400T"],""],["rozs",["C1200T"],""],["tritikale cirok koles hajdina",["C1600T_C1700T_C1900T"],""],
+ ["napraforgo",["I1120T"],""],["repce",["I1110T"],""],["szoja",["I1130T"],""],["mak",["I1190T"],"Mák"],
+ ["lucerna here takarmany",["G2000T"],""],["legelo ret gyep kaszalo",["J1000T","J2000T","G1000T"],"Gyep: állandó vagy ideiglenes"],
+ ["birka juh anyajuh",["A4110K","A4120"],"Csak az anyajuh számít, ha van"],
+ ["kos barany jerke jarka",["A4120"],"Egyéb juh: csak anyajuh nélkül számít"],
+ ["kecske anyakecske",["A4210K","A4220"],""],["gida bak",["A4220"],"Csak anyakecske nélkül számít"],
+ ["tehen marha szarvasmarha",["A2300G","A2300F","A2300"],"Hús-, tej- vagy kettős hasznú"],
+ ["borju",["A2010"],"Csak a tehénlétszám feletti rész számít"],["uszo",["A2220","A2230"],""],["bika tinó tino",["A2120","A2130"],""],["bivaly",["A2410"],""],
+ ["koca diszno sertes",["A3120","A3130"],""],["hizo",["A3130"],""],["malac",["A3110"],"Csak koca nélkül számít"],
+ ["tyuk tojotyuk tojo jerce",["A5110O"],""],["csirke brojler",["A5140","C_9"],""],["naposcsibe",["C_8"],""],
+ ["liba lud",["A5220"],""],["kacsa",["A5210"],""],["pulyka",["A5230"],""],["gyongytyuk furj galamb",["A5240_5300"],""],
+ ["meh mehcsalad kaptar mehesz",["A6710R"],""],["nyul",["A6111"],""],["lo szamar oszver poni",["C_18"],""],
+ ["gomba csiperke laskagomba shiitake gombahaz",["U1000"],"Gomba: 100 m²-ben, kormányhivatali igazolás kell"],
+ ["karacsonyfa fenyo",["X0000T"],"Nem kertészet"],["faiskola csemete oltvany",["L0000T"],""],["konyhakert",["K0000T_UAA09S"],"Legfeljebb 0,25 ha"],
+ ["szarvas damszarvas gimszarvas",["C_14","C_15"],""],["muflon",["C_16"],""],["vaddiszno",["C_17"],""],["facan",["C_10"],""],["fogoly",["C_11"],""],["strucc",["A5410"],""],["emu",["C_12"],""],["csincsilla",["C_13"],""]
+].map(([w,codes,note]) => ({words:norm(w).split(" "),codes,note}));
+
+const KOD = DATA.k.map(([ek,name,map]) => {
+  const codes = (map.match(/[A-Z][A-Z0-9_]+[A-Z0-9]/g)||[]).filter(c => P[c]);
+  return {ek,name,map,codes,n:norm(name+" "+ek)};
+});
+
+
+const eur = ft => ft / RATE;
+const fmtE = v => Math.round(v).toLocaleString("hu-HU") + " €";
+const fmtFt = v => Math.round(v).toLocaleString("hu-HU") + " Ft";
+const fmtN = (v,d=4) => Number(v).toLocaleString("hu-HU",{maximumFractionDigits:d});
+const esc = s => String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const parseNum = s => { const v = parseFloat(String(s).replace(/\s/g,"").replace(",", ".")); return isFinite(v) && v >= 0 ? v : 0; };
+
+function proofOf(code){
+  if (ENAR.has(code)) return {cls:"p",txt:"ENAR-ból"};
+  if (code==="A4120"||code==="A4220") return {cls:"p",txt:"ENAR / állatorvos (fiatal)"};
+  if (KH.has(code)) return {cls:"igaz",txt:"Kormányhivatali igazolás"};
+  if (code.startsWith("A")||code.startsWith("C_")) return {cls:"igaz",txt:"Állatorvosi igazolás"};
+  return {cls:"p",txt:"EK-ból"};
+}
+function kindTag(p){
+  if (p.sec==="Állattenyésztés") return '<span class="tag a">állat</span>';
+  if (p.hort) return '<span class="tag h">kertészet</span>';
+  return "";
+}
+/* beírási egységek a Segítség fülön → Excel-egység szorzó */
+function unitOpts(p){
+  if (p.unit==="ha") return [["ha","ha",1],["m2","m²",1/10000]];
+  if (p.unit==="100 db") return [["db","db",1/100],["100db","100 db",1]];
+  if (p.unit==="100m²") return [["m2","m²",1/100]];
+  if (p.unit==="kaptár") return [["db","méhcsalád",1]];
+  return [["db","db",1]];
+}
+
+/* ---------- állapot: termékkód → mennyiség Excel-egységben ---------- */
+/* Üres lap szabály: minden új látogatás (új lap/ablak) üres táblával és chattel indul.
+   Az állapot csak az adott böngészőlapon él (sessionStorage): frissítéskor megmarad, a lap bezárásakor törlődik,
+   és két egyszerre nyitott kalkulátor-lap nem látja egymás adatait. A régi, tartósan mentett adatot töröljük. */
+try { localStorage.removeItem("okos-ste-v1"); localStorage.removeItem("okos-ste-chat"); } catch(e) {}
+let S;
+try { S = JSON.parse(sessionStorage.getItem("okos-ste-sajat-v2")) } catch(e) {}
+if (!S || typeof S.q !== "object") S = {q:{}};
+const save = () => { try { sessionStorage.setItem("okos-ste-sajat-v2", JSON.stringify(S)) } catch(e) {} };
+const Q = c => parseNum(S.q[c] ?? 0);
+
+function counted(code){
+  let u = Q(code), note = "";
+  if (code==="A4120" && Q("A4110K")>0 && u>0){ u=0; note="Nem számít: van anyajuh."; }
+  if (code==="A4220" && Q("A4210K")>0 && u>0){ u=0; note="Nem számít: van anyakecske."; }
+  if (code==="A3110" && Q("A3120")>0 && u>0){ u=0; note="Nem számít: van tenyészkoca."; }
+  if (code==="A2010" && u>0){ const cows = COWS.reduce((a,c)=>a+Q(c),0); if (cows>0){ u=Math.max(0,u-cows); note=`Csak a tehénlétszám (${fmtN(cows,1)}) feletti rész számít.`; } }
+  if (code==="K0000T_UAA09S" && u>0.25){ u=0.25; note="Legfeljebb 0,25 ha számít."; }
+  return {e: eur(P[code].ft)*u, note};
+}
+function totals(){
+  let t=0,h=0,a=0;
+  ORDER.forEach(c => { const v = counted(c).e; if (!v) return; t+=v; if (P[c].sec==="Állattenyésztés") a+=v; else if (P[c].hort) h+=v; });
+  return {t,h,a};
+}
+function status(t){
+  if (t<=0) return ["st-none","NINCS ADAT","Írja be a mennyiségeket a zöld oszlopba."];
+  if (t<MIN) return ["st-low","KEVÉS",`Hiányzik ${fmtE(MIN-t)}.`];
+  if (t>=MAX) return ["st-high","TÚL NAGY",`${fmtE(t-MAX+0.01)}-val több a megengedettnél.`];
+  return ["st-ok","MEGFELEL",`Tartalék a felső határig: ${fmtE(MAX-0.01-t)}.`];
+}
+
+/* ---------- STÉ fül ---------- */
+function buildSte(){
+  let html = "", last = "";
+  ORDER.forEach(c => {
+    const p = P[c];
+    html += `<tr data-code="${c}" id="r-${c}">
+      <td class="rowno">${ROW[c]}</td><td class="mono">${c.length > 14 ? c.replace(/_([^_]*)$/, "_<br>$1") : c}</td><td class="sub">${esc(p.sec)}</td>
+      <td class="nm">${esc(p.name)}${WARN[c]?`<div class="note warn">⚠ ${esc(WARN[c])}</div>`:""}<div class="note warn" id="n-${c}" hidden></div></td><td class="sub">${esc(p.unit)}</td>
+      <td class="r num">${p.ft.toLocaleString("hu-HU")}</td>
+      <td class="r"><input id="in-${c}" data-in="${c}" type="text" inputmode="decimal" autocomplete="off" aria-label="${esc(p.name)} mennyiség"></td>
+      <td class="r num" id="e-${c}"></td></tr>`;
+  });
+  document.getElementById("steBody").innerHTML = html;
+  ORDER.forEach(c => { const v = S.q[c]; document.getElementById("in-"+c).value = v ? String(v).replace(".", ",") : ""; });
+  const ni = document.getElementById("clientName"); if (ni && ni.value.trim() !== (S.name||"")) ni.value = S.name || "";
+}
+function refresh(){
+  const only = document.getElementById("onlyFilled").checked;
+  ORDER.forEach(c => {
+    const p = P[c], v = counted(c), q = Q(c), tr = document.getElementById("r-"+c);
+    const ee = document.getElementById("e-"+c);
+    ee.textContent = q ? fmtE(v.e) : ""; ee.className = "r num" + (q && !v.e ? " zero" : "");
+    const n = document.getElementById("n-"+c); n.textContent = v.note; n.hidden = !v.note;
+    tr.classList.toggle("filled", q>0); tr.hidden = only && !(q>0);
+  });
+  const {t,h,a} = totals(); const [cls,lbl,msg] = status(t);
+  document.getElementById("sTot").innerHTML = `${esc(fmtE(t))} <span class="unit">STÉ</span>`;
+  const pill = document.getElementById("sPill"); pill.className = "pill "+cls; pill.textContent = lbl;
+  document.getElementById("sMsg").textContent = msg;
+  document.getElementById("sH").textContent = fmtE(h);
+  document.getElementById("sA").textContent = fmtE(a);
+  document.getElementById("sR").textContent = (t?Math.round((h+a)/t*100):0) + "%";
+  document.querySelectorAll('[data-ms="tot"]').forEach(x => x.textContent = fmtE(t));
+  document.querySelectorAll('[data-ms="pill"]').forEach(x => { x.className = "pill "+cls; x.textContent = lbl; });
+  document.querySelectorAll("[data-elom]").forEach(x => x.hidden = cls !== "st-ok");
+  document.querySelectorAll('[data-ms="msg"]').forEach(x => x.textContent = t>0 ? (cls==="st-ok" ? "Az üzemmérete megfelel a pályázatnak." : msg) : "A chatben beírt tételek ide adódnak össze.");
+}
+document.addEventListener("click", e => { if (e.target.closest("[data-goste]")) showTab("ste"); });
+document.getElementById("steBody").addEventListener("input", e => {
+  const c = e.target.dataset.in; if (!c) return;
+  const raw = e.target.value.trim(); if (raw==="" || parseNum(raw)===0) delete S.q[c]; else S.q[c] = parseNum(raw);
+  save(); refresh();
+});
+document.getElementById("onlyFilled").addEventListener("change", refresh);
+/* Ugrás az ágazat első sorára (a táblázat saját görgetősávjában, a fejléc alá) */
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-jump]"); if (!b) return;
+  const of = document.getElementById("onlyFilled"); if (of.checked){ of.checked = false; refresh(); }
+  const tr = document.getElementById("r-"+b.dataset.jump), wrap = tr.closest(".tablewrap");
+  const head = wrap.querySelector("thead").offsetHeight;
+  const bar = document.querySelector(".sumbar"), barH = getComputedStyle(bar).position === "sticky" ? bar.offsetHeight + 8 : 0;
+  const top = wrap.getBoundingClientRect().top;
+  if (top < barH || top > innerHeight/2) window.scrollTo(0, scrollY + top - barH);
+  wrap.scrollTop = tr.offsetTop - head;
+  tr.classList.add("flash"); setTimeout(() => tr.classList.remove("flash"), 1400);
+  document.getElementById("in-"+b.dataset.jump).focus({preventScroll:true});
+});
+
+/* ---------- fülek ---------- */
+function showTab(which, quiet){
+  ["ste","chat","read"].forEach(k => {
+    document.getElementById("tab-"+k).setAttribute("aria-selected", k===which);
+    document.getElementById("pane-"+k).hidden = k!==which;
+  });
+  if (which==="chat") setTimeout(()=>{ if (!quiet) document.getElementById("chatIn").focus({preventScroll:true}); const l=document.getElementById("chatLog"); l.scrollTop=l.scrollHeight; },0);
+}
+document.getElementById("tab-ste").onclick = () => { window.__tabTouched = true; showTab("ste"); };
+document.getElementById("tab-read").onclick = () => showTab("read");
+document.getElementById("tab-chat").onclick = () => showTab("chat");
+if (location.hash==="#chat") showTab("chat");
+if (location.hash==="#segitseg") showTab("chat");
+if (location.hash==="#beolvasas") showTab("read");
+
+/* ---------- beírás a Segítség fülről az STÉ fülre ---------- */
+let wid = 0;
+function writer(c){
+  const p = P[c], opts = unitOpts(p), id = "w"+(++wid);
+  const sel = opts.length>1 ? `<select id="${id}u" aria-label="Mértékegység">${opts.map(o=>`<option value="${o[0]}">${o[1]}</option>`).join("")}</select>` : `<span class="sub">${opts[0][1]}</span>`;
+  return `<div class="act"><span class="xl num">STÉ fül: ${ROW[c]}. sor</span>
+    <form class="write" data-write="${c}" data-id="${id}"><input id="${id}" type="text" inputmode="decimal" placeholder="mennyiség" aria-label="Mennyiség">${sel}<button type="submit" class="primary">Beírom</button></form></div>`;
+}
+document.addEventListener("submit", e => {
+  const f = e.target.closest("form[data-write]"); if (!f) return;
+  e.preventDefault();
+  const c = f.dataset.write, id = f.dataset.id, p = P[c];
+  const val = parseNum(document.getElementById(id).value);
+  if (!val){ document.getElementById(id).focus(); toast("Írjon be egy mennyiséget."); return; }
+  const opts = unitOpts(p), uSel = document.getElementById(id+"u");
+  const o = opts.find(x => x[0] === (uSel ? uSel.value : opts[0][0])) || opts[0];
+  const add = +(val * o[2]).toFixed(6);
+  const before = Q(c);
+  S.q[c] = +(before + add).toFixed(6); save();
+  const inp = document.getElementById("in-"+c); inp.value = String(S.q[c]).replace(".", ",");
+  refresh(); showTab("ste");
+  const tr = document.getElementById("r-"+c); tr.hidden = false;
+  tr.scrollIntoView({block:"center", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth"});
+  tr.classList.add("flash"); setTimeout(()=>tr.classList.remove("flash"), 1400);
+  const conv = o[2]!==1 ? ` (${fmtN(val)} ${o[1]})` : "";
+  toast(`${ROW[c]}. sor, ${p.name}: beírva ${fmtN(add)} ${p.unit}${conv}${before?` · összesen ${fmtN(S.q[c])} ${p.unit}`:""}`);
+});
+
+/* ---------- kereső ---------- */
+function search(qRaw){
+  const q = norm(qRaw); if (!q) return [];
+  const toks = q.split(" "), out = [], seen = new Set();
+  const push = (key, item) => { if (item.code && !P[item.code]) return; if (!seen.has(key)) { seen.add(key); out.push(item); } };
+  SYN.forEach(s => { if (toks.every(t => s.words.some(w => w.startsWith(t)))) s.codes.forEach(c => push("p"+c, {code:c, via:s.note||""})); });
+  DATA.p.forEach(([code,name]) => { const n = norm(name+" "+code); if (toks.every(t => n.includes(t))) push("p"+code, {code, via:""}); });
+  KOD.forEach(k => { if (toks.every(t => k.n.includes(t))) {
+    if (k.codes.length) push("k"+k.ek, {code:k.codes[0], alt:k.codes.slice(1), via:`EK: ${k.ek} ${k.name}`});
+    else push("k"+k.ek, {code:null, ek:k});
+  }});
+  return out.slice(0,40);
+}
+function resCard(c, via, alt){
+  const p = P[c], pr = proofOf(c);
+  const alts = (alt||[]).map(x => `<span class="mono">${esc(x)}</span> (${ROW[x]}. sor)`).join(", ");
+  return `<div class="res">
+    <div><div class="t">${esc(p.name)} ${kindTag(p)}</div>
+    <div class="m"><span class="mono">${c}</span> · ${fmtE(eur(p.ft))}/${esc(p.unit)} · <span class="tag ${pr.cls}" style="margin:0">${pr.txt}</span></div>
+    ${WARN[c]?`<div class="note warn">⚠ ${esc(WARN[c])}</div>`:""}</div>
+    ${writer(c)}
+    ${via||alts?`<div class="why">${esc(via||"")}${alts?` · más kód is lehet: ${alts}`:""}</div>`:""}
+  </div>`;
+}
+
+/* ---------- ügyfél, másolás ---------- */
+let toastT; function toast(m){ const t=document.getElementById("toast"); t.textContent=m; t.hidden=false; clearTimeout(toastT); toastT=setTimeout(()=>t.hidden=true,3200); }
+document.getElementById("clearBtn").addEventListener("click", () => {
+  const undo = structuredClone(S), undoChat = structuredClone(chatTurns);
+  S = {q:{}}; save(); buildSte(); refresh(); chatTurns = []; saveChat(); renderChat();
+  document.getElementById("readOut").hidden = true; document.getElementById("readStatus").textContent = "";
+  const t=document.getElementById("toast"); t.innerHTML='Új számítás: a táblázat, a név és a beszélgetés kiürítve. <button type="button" id="undoBtn" style="margin-left:8px;padding:2px 8px">Visszavonás</button>'; t.hidden=false;
+  clearTimeout(toastT); toastT=setTimeout(()=>t.hidden=true,6000);
+  document.getElementById("undoBtn").onclick = () => { S = undo; save(); buildSte(); refresh(); chatTurns = undoChat; saveChat(); renderChat(); t.hidden=true; };
+});
+/* ---------- STÉ Jelentés (PDF) és Előminősítés ---------- */
+const ELOM_URL = "https://www.szalontaikft.hu/kisuzem26-11-1cl#elominosites";
+const PARENT_ORIGINS = ["https://www.szalontaikft.hu", "https://szalontaikft.hu"];
+const LIBS = ["https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js",
+              "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"];
+const slug = v => String(v||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^A-Za-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,40);
+const pdfName = () => `STE-jelentes-${S.name ? slug(S.name)+"-" : ""}${new Date().toISOString().slice(0,10)}.pdf`;
+const nameIn = document.getElementById("clientName");
+nameIn.value = S.name || "";
+nameIn.addEventListener("input", () => { const v = nameIn.value.trim(); if (v) S.name = v; else delete S.name; save(); });
+function reportHtml(){
+  const {t,h,a} = totals(); const [cls,lbl,msg] = status(t);
+  const col = {"st-ok":"#1f7a3d","st-low":"#a15c00","st-high":"#b3261e","st-none":"#5b6862"}[cls];
+  const rows = ORDER.filter(c => Q(c) > 0).map(c => { const v = counted(c), p = P[c];
+    return `<tr><td style="color:#5b6862">${ROW[c]}.</td><td style="font-family:monospace">${c}</td><td>${esc(p.name)}${v.note?`<div style="color:#a15c00;font-size:11px">${esc(v.note)}</div>`:""}</td>
+      <td style="text-align:right;white-space:nowrap">${fmtN(Q(c))} ${esc(UNIT_TXT(p.unit))}</td><td style="text-align:right;white-space:nowrap">${fmtE(v.e)}</td></tr>`; }).join("");
+  const td = "padding:6px 8px;border-bottom:1px solid #d5dbd1;vertical-align:top";
+  return `<div style="font:13px/1.45 'IBM Plex Sans',Arial,sans-serif;color:#18211d;padding:40px 44px;background:#fff">
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #1d5f52;padding-bottom:10px">
+      <div><div style="font-size:24px;font-weight:700;color:#1d5f52">STÉ Jelentés</div>
+      <div style="font-size:13px">Mezőgazdasági kisüzemek beruházási támogatása · KAP-RD09a-2-26</div></div>
+      <div style="text-align:right;font-size:12px;color:#5b6862">${S.name ? `<div style="font-size:15px;font-weight:700;color:#18211d">${esc(S.name)}</div>` : ""}Készült: ${new Date().toLocaleDateString("hu-HU")}</div></div>
+    <div style="display:flex;gap:28px;align-items:center;margin:18px 0;padding:14px 16px;border:1px solid #d5dbd1;border-radius:8px">
+      <div><div style="font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:#5b6862">STÉ összesen</div><div style="font-size:26px;font-weight:700">${fmtE(t)}</div></div>
+      <div><div style="display:inline-block;font-weight:700;font-size:12px;padding:3px 10px;border-radius:99px;border:1.5px solid ${col};color:${col}">${lbl}</div>
+      <div style="margin-top:4px">${esc(cls==="st-ok" ? "Megfelel a feltételnek: 5 000 € ≤ STÉ < 10 000 €." : msg)}</div></div>
+      <div style="margin-left:auto;font-size:12px;color:#5b6862">Kertészet: <b style="color:#18211d">${fmtE(h)}</b><br>Állattenyésztés: <b style="color:#18211d">${fmtE(a)}</b><br>Kertészet + állat aránya: <b style="color:#18211d">${t?Math.round((h+a)/t*100):0}%</b></div></div>
+    <table style="width:100%;border-collapse:collapse;font-size:12.5px">
+      <thead><tr>${["Sor","Termékkód","Megnevezés","Mennyiség","STÉ"].map((x,k)=>`<th style="${td};text-align:${k>2?"right":"left"};font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:#5b6862">${x}</th>`).join("")}</tr></thead>
+      <tbody>${rows.replace(/<td/g, `<td style="${td}"`).replace(/<td style="([^"]*)" style="/g, '<td style="$1;')}</tbody>
+      <tfoot><tr><td colspan="4" style="padding:8px;text-align:right;font-weight:700">Összesen</td><td style="padding:8px;text-align:right;font-weight:700;white-space:nowrap">${fmtE(t)}</td></tr></tfoot>
+    </table>
+    ${(S.docs||[]).length ? `<div style="margin-top:16px;font-size:12px"><div style="font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:#5b6862;font-weight:600;margin-bottom:4px">Feltöltött dokumentumok</div>${S.docs.map(x=>`<div>${esc(x.name)}${x.tipus?` <span style="color:#5b6862">(${esc(x.tipus)})</span>`:""}</div>`).join("")}</div>` : ""}
+    <div style="margin-top:22px;font-size:11px;color:#5b6862;line-height:1.5">STÉ-értékek: a felhívás 11. melléklete (2026. 02. 25.), 2020. évi STÉ, 348,93 Ft/€. Feltétel: 5 000 € ≤ STÉ &lt; 10 000 €.<br>
+    Előzetes, tájékoztató számítás. A végleges üzemméretet a Magyar Államkincstár állapítja meg.<br>
+    Okos STÉ Kalkulátor · Szalontai Jenő, NAK-regisztrált szaktanácsadó · 06 20 262 7406 · szalontai@szalontaikft.hu · kalkulator.szalontaikft.hu</div></div>`;
+}
+async function makePdf(){
+  for (const src of LIBS) await loadScript(src);
+  const box = document.createElement("div");
+  box.style.cssText = "position:fixed;left:-10000px;top:0;width:794px;background:#fff";
+  box.innerHTML = reportHtml(); document.body.appendChild(box);
+  try {
+    const cv = await window.html2canvas(box, {scale:2, backgroundColor:"#ffffff"});
+    const pdf = new window.jspdf.jsPDF({unit:"pt", format:"a4"});
+    const W = pdf.internal.pageSize.getWidth(), H = pdf.internal.pageSize.getHeight();
+    const imgH = cv.height * W / cv.width, img = cv.toDataURL("image/jpeg", 0.92);
+    let y = 0; pdf.addImage(img, "JPEG", 0, y, W, imgH);
+    while (imgH + y > H + 1){ y -= H; pdf.addPage(); pdf.addImage(img, "JPEG", 0, y, W, imgH); }
+    return pdf.output("blob");
+  } finally { box.remove(); }
+}
+/* Mentés: a Claude-ban megnyitott előnézetben a Claude mentés-ablakával (downloads), a weboldalon sima letöltéssel. */
+async function downloadBlob(blob, name){
+  if (window.claude && typeof window.claude.use === "function"){
+    let dl = null; try { dl = await window.claude.use("downloads"); } catch(e){}
+    if (dl){
+      try { await dl.save({filename: name, data: blob}); return true; }
+      catch(e){ if (e && (e.code === "declined" || e.code === "rate_limited")) return false; }
+    }
+  }
+  const u = URL.createObjectURL(blob), a = document.createElement("a");
+  a.href = u; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(u), 30000);
+}
+document.getElementById("reportBtn").addEventListener("click", async e => {
+  const b = e.currentTarget; if (!ORDER.some(c => Q(c) > 0)){ toast("Előbb írjon be legalább egy tételt."); return; }
+  b.disabled = true; const old = b.textContent; b.textContent = "Készül…";
+  try { const ok = await downloadBlob(await makePdf(), pdfName()); if (ok !== false) toast("Az STÉ Jelentés elkészült."); }
+  catch(err){ toast("A PDF-et most nem sikerült elkészíteni. Próbálja újra."); }
+  finally { b.disabled = false; b.textContent = old; }
+});
+/* Előminősítés: a kalkulátort beágyazó oldal (SAPI) átvált az űrlapra, és a PDF-et a feltöltés mezőbe teszi.
+   Ha nincs beágyazó oldal vagy nem válaszol: a PDF letöltődik, és linket adunk az űrlaphoz. */
+function askParent(msg, ms){
+  return new Promise(res => {
+    if (window.parent === window) return res(false);
+    const on = e => { if (PARENT_ORIGINS.includes(e.origin) && e.data && e.data.type === "okos-ste-ack"){ done(true); } };
+    const done = v => { window.removeEventListener("message", on); clearTimeout(tm); res(v); };
+    const tm = setTimeout(() => done(false), ms);
+    window.addEventListener("message", on);
+    PARENT_ORIGINS.forEach(o => { try { window.parent.postMessage(msg, o); } catch(e){} });
+  });
+}
+document.addEventListener("click", async e => {
+  const b = e.target.closest("[data-elom]"); if (!b) return;
+  document.querySelectorAll("[data-elom]").forEach(x => { x.disabled = true; x.dataset.old = x.textContent; x.textContent = "Készül a jelentés…"; });
+  let blob = null; try { blob = await makePdf(); } catch(err){}
+  const {t} = totals();
+  const ok = await askParent({type:"okos-ste-elominosites", filename: pdfName(), pdf: blob ? await blob.arrayBuffer() : null, ste: Math.round(t)}, 1500);
+  document.querySelectorAll("[data-elom]").forEach(x => { x.disabled = false; x.textContent = x.dataset.old; });
+  if (ok) return;
+  if (blob) await downloadBlob(blob, pdfName());
+  const tt = document.getElementById("toast");
+  tt.innerHTML = `${blob ? "Az STÉ Jelentés letöltve. Csatolja az űrlaphoz. " : ""}<a href="${ELOM_URL}" target="_top" style="color:inherit;font-weight:700">Tovább az Előminősítés űrlapra →</a>`;
+  tt.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => tt.hidden = true, 15000);
+});
+
+
+/* ---------- Claude: Hová sorolom? ---------- */
+let sample = null, ctl = null;
+let STATUS = {ai:false, lead:false, privacy:""};
+async function apiJson(path, body, signal){
+  let r; try { r = await fetch(path, {method:"POST", headers:{"content-type":"application/json"}, body: JSON.stringify(body), signal}); }
+  catch(e){ throw {code: e && e.name === "AbortError" ? "cancelled" : "network"}; }
+  let j = null; try { j = await r.json(); } catch(e){}
+  if (!r.ok || !j || j.error) throw {code: (j && j.error) || "upstream"};
+  return j;
+}
+async function apiChat(turns, state, onText, signal){
+  let r; try { r = await fetch("/api/chat", {method:"POST", headers:{"content-type":"application/json"}, body: JSON.stringify({turns, state}), signal}); }
+  catch(e){ throw {code: e && e.name === "AbortError" ? "cancelled" : "network"}; }
+  if (!r.ok){ let j = null; try { j = await r.json(); } catch(e){} throw {code: (j && j.error) || "upstream"}; }
+  const rd = r.body.getReader(), dec = new TextDecoder(); let text = "";
+  try {
+    for (;;){ const {value, done} = await rd.read(); if (done) break; text += dec.decode(value, {stream:true}); onText({text: text.replace(/\n?\[\[HIBA\]\]/g, "")}); }
+  } catch(e){ throw {code: e && e.name === "AbortError" ? "cancelled" : "network", text}; }
+  if (text.includes("[[HIBA]]")) throw {code:"upstream", text: text.replace(/\n?\[\[HIBA\]\]/g, "")};
+  return {text};
+}
+async function blobToImg(blob, maxSide){
+  maxSide = maxSide || 1600;
+  const bmp = await createImageBitmap(blob); const sc = Math.min(1, maxSide / Math.max(bmp.width, bmp.height));
+  const cv = document.createElement("canvas"); cv.width = Math.round(bmp.width*sc); cv.height = Math.round(bmp.height*sc);
+  const cx = cv.getContext("2d"); cx.fillStyle = "#fff"; cx.fillRect(0,0,cv.width,cv.height); cx.drawImage(bmp,0,0,cv.width,cv.height);
+  const jb = await new Promise(res => cv.toBlob(res, "image/jpeg", 0.85));
+  const data = await new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(String(fr.result).split(",")[1]); fr.onerror = rej; fr.readAsDataURL(jb); });
+  return {media_type:"image/jpeg", data};
+}
+(async () => {
+  /* saját példány: nincs szerver, Claude a claude.ai-n keresztül */
+  sample = STATUS.ai ? true : null;
+  document.getElementById("tab-read").hidden = !STATUS.ai;
+  document.getElementById("tab-chat").hidden = !STATUS.ai;
+  if (STATUS.ai && !location.hash && !window.__tabTouched) showTab("chat", true);
+  document.querySelectorAll(".leadbtn").forEach(x => x.hidden = !STATUS.lead);
+  const pl = document.getElementById("privacyLink"); if (pl && STATUS.privacy) pl.href = STATUS.privacy;
+})();
+const PROD_LIST = DATA.p.filter(p => !EXCL.has(p[0])).map(([c,n,u,ft])=>`${c} | ${n} | ${u} | ${ft} Ft`).join("\n");
+const KOD_LIST = DATA.k.map(([e,n,m])=>`${e} | ${n} | ${m}`).join("\n");
+/* promptFor: a közvetítőben (szerveren) van */
+
+/* ---------- Beolvasás: igazolás feltöltése és írásos megadás ---------- */
+const readStatus = document.getElementById("readStatus");
+let readItems = [], readMetaInfo = null, readCtl = null;
+const UNIT_TXT = u => u==="100m²" ? "100 m²" : u==="kaptár" ? "méhcsalád" : u;
+function loadScript(src){ return new Promise((res,rej)=>{ if ([...document.scripts].some(s=>s.src===src)) return res(); const s=document.createElement("script"); s.src=src; s.onload=res; s.onerror=()=>rej(new Error("script")); document.head.appendChild(s); }); }
+async function pdfLib(){
+  if (!window.pdfjsLib){
+    await loadScript("https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js");
+    await loadScript("https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js");
+    window.pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+  }
+  return window.pdfjsLib;
+}
+async function pdfToInputs(file, maxPages){
+  const lib = await pdfLib();
+  const doc = await lib.getDocument({data: await file.arrayBuffer()}).promise;
+  let text = "", images = [];
+  for (let i=1; i<=doc.numPages; i++){
+    const page = await doc.getPage(i);
+    const tc = await page.getTextContent();
+    text += `\n[${i}. oldal]\n` + tc.items.map(t=>t.str + (t.hasEOL?"\n":" ")).join("");
+    if (images.length < maxPages){
+      const vp0 = page.getViewport({scale:1}); const scale = Math.min(2.2, 1600/vp0.width);
+      const vp = page.getViewport({scale}); const cv = document.createElement("canvas");
+      cv.width = Math.round(vp.width); cv.height = Math.round(vp.height);
+      const ctx = cv.getContext("2d"); ctx.fillStyle="#fff"; ctx.fillRect(0,0,cv.width,cv.height);
+      await page.render({canvasContext: ctx, viewport: vp}).promise;
+      images.push(await new Promise(r => cv.toBlob(r, "image/jpeg", 0.85)));
+    }
+  }
+  return {text: text.slice(0, 40000), full: text, images, pages: doc.numPages};
+}
+/* Hosszú, digitális egységes kérelem: csak a táblák főnövény-adatai, a másodvetések és a 16. összesítő megy Claude-nak
+   (különben a 40 000 karakteres határ levágná a táblák végét, és drágább is). */
+function compactEk(t){
+  if (!/Egységes kérelem/i.test(t) || !/hasznosítási kód/i.test(t) || t.length < 30000) return null;
+  const L = t.split("\n"), out = [];
+  const head = L.slice(0, 40).filter(x => /Iratazonosító|beadás|Beadó|Név:|támogatási azonosító|Egységes kérelem/i.test(x));
+  const keep = /Blokk:|hasznosítási kód|hasznosítás \d|igényelt terület|Termesztő berendezés|Másodvetés|másodvetés sorszáma|Agrotechnika típusa/i;
+  let sum = [], inSum = false;
+  for (const x of L){
+    if (/Területek összesítése hasznosítási adatok szerint/i.test(x)) { inSum = true; sum.push(x); continue; }
+    if (inSum){ if (/^\s*\d+\s+Területek összesítése|^\s*1[7-9]\s/.test(x)) inSum = false; else { sum.push(x); continue; } }
+    if (keep.test(x)) out.push(x.replace(/\s{2,}/g, "  ").trim());
+  }
+  return "[EGYSÉGES KÉRELEM – KIVONAT: fejléc, minden tábla főnövény-adata, másodvetések, és a 16. pont szerinti összesítő. A 'Tábla igényelt terület (ha)' a tábla területe.]\n"
+    + head.join("\n") + "\n\n== TÁBLÁK ==\n" + out.join("\n") + "\n\n== 16. ÖSSZESÍTŐ ==\n" + sum.join("\n");
+}
+/* readPrompt: a közvetítőben (szerveren) van */
+function setReadBusy(b, msg){
+  document.getElementById("readFileBtn").disabled = b || !document.getElementById("file").files.length;
+  readStatus.innerHTML = msg ? (b ? `${esc(msg)} <button type="button" id="readStop" class="ghost" style="padding:2px 10px;margin-left:8px">Állj</button>` : esc(msg)) : "";
+  const st = document.getElementById("readStop"); if (st) st.onclick = () => readCtl?.abort();
+}
+async function runRead(kind, reqBody){
+  if (!sample){ readStatus.textContent = "A Claude-funkció ebben a nézetben nem érhető el."; return; }
+  readCtl = new AbortController();
+  setReadBusy(true, "Claude olvassa… (fél–egy perc is lehet)");
+  try {
+    const r = await apiJson("/api/read", reqBody, readCtl.signal);
+    readMetaInfo = r?.dokumentum || null;
+    const warns = Array.isArray(r?.figyelmeztetesek) ? r.figyelmeztetesek.map(String) : [];
+    readItems = (Array.isArray(r?.tetelek) ? r.tetelek : []).map(t => ({
+      code: String(t.termek_kod||"").trim(), q: Number(String(t.mennyiseg).replace(",", ".")) || 0,
+      hely: String(t.hely||""), orig: String(t.eredeti||""), note: String(t.megjegyzes||""), on: true
+    })).filter(t => t.q > 0);
+    readItems.forEach(t => { if (!P[t.code]) { t.on = false; t.note = (t.note? t.note+" ":"") + `Ismeretlen kód: ${t.code}`; } });
+    renderRead(warns, kind);
+    setReadBusy(false, readItems.length ? "" : "Nem találtam beírható tételt.");
+  } catch(e){
+    const msg = {cancelled:"Megállítva.", not_granted:"A Claude-funkció nincs engedélyezve ehhez az oldalhoz.", rate_limited:"Túl sok kérés, próbálja újra egy perc múlva.", invalid_json:"Nem jött értelmezhető válasz, próbálja újra.", image_rejected:"A képet nem sikerült feldolgozni (túl nagy vagy rossz formátum).", images_unavailable:"Ebben a nézetben képet nem lehet küldeni.", prompt_too_large:"A dokumentum túl nagy, próbálja kevesebb oldallal."}[e?.code] || "Most nem sikerült feldolgozni. Próbálja újra.";
+    setReadBusy(false, msg);
+  }
+}
+let lastWarns = [], lastKind = "";
+function renderRead(warns, kind){
+  lastWarns = warns; lastKind = kind;
+  document.getElementById("readHelyTh").textContent = kind==="ek" ? "Tábla / EK-kód" : "Hely / forrás";
+  const out = document.getElementById("readOut"); out.hidden = false;
+  const m = readMetaInfo || {}, yr = (String(m.ev||"").match(/(19|20)\d{2}/)||[])[0];
+  document.getElementById("readMeta").textContent = [m.tipus, m.felhivas, m.ev && (/^\d{4}$/.test(String(m.ev).trim()) ? m.ev+". év" : m.ev), m.iktatoszam, m.kedvezmenyezett].filter(Boolean).join(" · ");
+  const w = [...warns];
+  const enar = /egyedlelt/i.test(String(m.tipus||""));
+  if (enar) w.push("Az ENAR egyedleltár egy adott napi állapotot mutat. A pályázatban az elmúlt 12 hónap átlagos létszáma számít, ezt egyeztesse.");
+  if (kind==="doc" && !enar && yr && yr !== "2026") w.unshift(`A dokumentum ${yr}. évre szól. A 2026. novemberi–decemberi beadáshoz friss, 2026-os adat kell.`);
+  if (kind==="doc" && m.felhivas && !/RD09a/i.test(String(m.felhivas))) w.unshift(`A dokumentum egy másik felhívás melléklete (${m.felhivas}). A Kisüzemhez a KAP-RD09a-2-26 4. melléklete kell.`);
+  if (kind==="ek" && yr && yr !== "2026") w.unshift(`Ez a ${yr}. évi egységes kérelem. A 2026. novemberi–decemberi beadásnál a 2026. évi EK az irányadó.`);
+  if (kind==="ek") w.push("Az EK-ból a Kincstár csak az elfogadott területet veszi figyelembe. A zöldség-, virág- és fedett területekhez kormányhivatali igazolás is kell.");
+  document.getElementById("readWarn").innerHTML = [...new Set(w)].map(x=>`<div class="banner" style="margin-bottom:6px">⚠ ${esc(x)}</div>`).join("");
+  document.getElementById("readRows").innerHTML = readItems.map((t,i) => {
+    const p = P[t.code];
+    return `<tr><td><input type="checkbox" data-ron="${i}" ${t.on?"checked":""} ${p?"":"disabled"} aria-label="Beírás"></td>
+      <td class="rowno">${p?ROW[t.code]:""}</td><td class="mono">${(t.opts && (t.opts.length>1 || !p)) ? `<select data-rcode="${i}" aria-label="Termékkód">${p?"":'<option value="">— válasszon —</option>'}${t.opts.map(c=>`<option value="${c}"${c===t.code?" selected":""}>${c} – ${esc(P[c].name.slice(0,40))}</option>`).join("")}</select>` : esc(t.code||"–")}</td>
+      <td class="nm">${p?esc(p.name):"—"}${t.note?`<div class="note warn">${esc(t.note)}</div>`:""}</td>
+      <td class="nm sub">${esc(t.hely)}${t.orig?`<div class="note">${esc(t.orig)}</div>`:""}</td>
+      <td class="r"><input type="text" inputmode="decimal" data-rq="${i}" value="${String(t.q).replace(".", ",")}" aria-label="Mennyiség"></td>
+      <td class="sub">${p?esc(UNIT_TXT(p.unit)):""}</td><td class="r num" id="re-${i}">${p?fmtE(eur(p.ft)*t.q):""}</td></tr>`;
+  }).join("");
+  readSum();
+}
+function readSum(){
+  let s = 0; readItems.forEach((t,i) => { const p=P[t.code]; const v = p ? eur(p.ft)*t.q : 0; const el=document.getElementById("re-"+i); if (el) el.textContent = p?fmtE(v):""; if (t.on && p) s += v; });
+  document.getElementById("readSum").textContent = fmtE(s);
+}
+document.getElementById("readRows").addEventListener("input", e => {
+  const qi = e.target.dataset.rq; if (qi!==undefined){ readItems[+qi].q = parseNum(e.target.value); readSum(); }
+});
+document.getElementById("readRows").addEventListener("change", e => {
+  const oi = e.target.dataset.ron; if (oi!==undefined){ readItems[+oi].on = e.target.checked; readSum(); }
+  const ci = e.target.dataset.rcode; if (ci!==undefined){ const it = readItems[+ci]; it.code = e.target.value; it.on = !!P[it.code]; renderRead(lastWarns, lastKind); }
+});
+document.getElementById("applyBtn").addEventListener("click", () => {
+  const sel = readItems.filter(t => t.on && P[t.code] && t.q>0); if (!sel.length){ toast("Nincs kijelölt tétel."); return; }
+  const replace = document.querySelector('input[name="wmode"]:checked').value === "replace";
+  const undo = structuredClone(S);
+  if (replace) S.q = {};
+  sel.forEach(t => { S.q[t.code] = +(Q(t.code) + t.q).toFixed(6); });
+  save(); buildSte(); refresh(); showTab("ste");
+  const t=document.getElementById("toast"); t.innerHTML=`${sel.length} tétel beírva az STÉ fülre. <button type="button" id="undoBtn2" style="margin-left:8px;padding:2px 8px">Visszavonás</button>`; t.hidden=false;
+  clearTimeout(toastT); toastT=setTimeout(()=>t.hidden=true,7000);
+  document.getElementById("undoBtn2").onclick = () => { S = undo; save(); buildSte(); refresh(); t.hidden=true; };
+});
+/* fájl kiválasztás, húzás */
+const fileIn = document.getElementById("file"), drop = document.getElementById("drop");
+function fileChosen(){ const f = fileIn.files[0]; document.getElementById("fileName").innerHTML = f ? `<strong>${esc(f.name)}</strong> (${Math.round(f.size/1024)} kB)` : "<strong>Fájl kiválasztása</strong> vagy ide húzhatja<br><span class=\"sub\">PDF vagy fénykép (JPG, PNG). A dokumentum típusát Claude felismeri.</span>"; document.getElementById("readFileBtn").disabled = !f; }
+fileIn.addEventListener("change", fileChosen);
+["dragover","dragenter"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add("over"); }));
+["dragleave","drop"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove("over"); }));
+drop.addEventListener("drop", e => { if (e.dataTransfer.files.length){ fileIn.files = e.dataTransfer.files; fileChosen(); } });
+document.getElementById("readFileBtn").addEventListener("click", async () => {
+  const f = fileIn.files[0]; if (!f || !sample) return;
+  const canImg = true, maxImg = 6;
+  try {
+    let images = [], text = "";
+    if (/pdf$/i.test(f.type) || /\.pdf$/i.test(f.name)){
+      setReadBusy(true, "PDF előkészítése…");
+      const r = await pdfToInputs(f, canImg ? Math.min(maxImg, 6) : 0);
+      images = r.images; text = r.text;
+      const ce = compactEk(r.full);
+      if (ce){ text = ce.slice(0, 40000); images = images.slice(0, 1); }
+      if (!canImg && text.replace(/\s/g,"").length < 100){ setReadBusy(false, "Ez a PDF szkennelt kép, de ebben a nézetben képet nem lehet Claude-nak küldeni."); return; }
+    } else if (/^image\//.test(f.type)){
+      if (!canImg){ setReadBusy(false, "Ebben a nézetben képet nem lehet Claude-nak küldeni. Töltsön fel PDF-et, vagy használja az írásos megadást."); return; }
+      images = [f];
+      if (f.size > 20*1024*1024){ setReadBusy(false, "A kép túl nagy (legfeljebb 20 MB)."); return; }
+    } else { setReadBusy(false, "Csak PDF vagy kép (JPG, PNG) tölthető fel."); return; }
+    setReadBusy(true, "Képek előkészítése…");
+    const imgs = []; for (const im of images) imgs.push(await blobToImg(im));
+    await runAuto({kind:"auto", text, images: imgs}, f.name);
+  } catch(e){ setReadBusy(false, "A fájlt nem sikerült megnyitni."); }
+});
+document.getElementById("goChat").addEventListener("click", () => showTab("chat"));
+
+
+
+/* ---------- Egységes kérelem: táblák → hasznosítási kód → STÉ (Kód-STÉ lista alapján) ---------- */
+const KODMAP = {}; KOD.forEach(k => KODMAP[k.ek.toUpperCase()] = k);
+/* ekPrompt: a közvetítőben (szerveren) van */
+function ekToItems(tablak){
+  return tablak.map(t => {
+    const kod = String(t.kod||"").trim().toUpperCase().replace(/\s+/g,"");
+    const k = KODMAP[kod]; const q = Number(String(t.terulet_ha).replace(",", ".")) || 0;
+    const it = {q, hely:`${t.tabla?t.tabla+". tábla":""}${t.blokk?" · "+t.blokk:""}`, orig:`${kod}${t.megnevezes?" – "+t.megnevezes:""}`, note:String(t.megjegyzes||""), on:true, code:"", opts:null, ek:kod};
+    if (t.masodvetes){ it.on = false; it.note = (it.note?it.note+" ":"") + "Másodvetés: nem számít bele (csak a főnövény)."; }
+    if (!k){ it.on = false; it.opts = ORDER.slice(); it.note = (it.note?it.note+" ":"") + `A „${kod}” kód nincs a Kód-STÉ listában (2024-es kódlista). Válassza ki kézzel a termékkódot.`; return it; }
+    if (!k.codes.length){ it.on = false; it.note = (it.note?it.note+" ":"") + `Nem számít bele az STÉ-be (${k.map}).`; return it; }
+    it.code = k.codes[0];
+    if (k.codes.length > 1){ it.opts = k.codes; it.note = (it.note?it.note+" ":"") + "Több termékkód lehetséges, ellenőrizze a választást."; }
+    if (/igazol/i.test(k.map)) it.note = (it.note?it.note+" ":"") + "Kormányhivatali igazolás kell hozzá (4. melléklet).";
+    if (P[it.code].unit !== "ha"){ it.on = false; it.note += " A mértékegység nem hektár, ellenőrizze."; }
+    return it;
+  });
+}
+async function runEk(reqBody){
+  if (!sample){ readStatus.textContent = "A Claude-funkció ebben a nézetben nem érhető el."; return; }
+  readCtl = new AbortController();
+  setReadBusy(true, "Claude olvassa az egységes kérelmet… (egy perc is lehet)");
+  try {
+    const r = await apiJson("/api/read", reqBody, readCtl.signal);
+    readMetaInfo = r?.dokumentum || null;
+    const warns = Array.isArray(r?.figyelmeztetesek) ? r.figyelmeztetesek.map(String) : [];
+    readItems = ekToItems(Array.isArray(r?.tablak) ? r.tablak : []).filter(t => t.q > 0);
+    renderRead(warns, "ek");
+    setReadBusy(false, readItems.length ? "" : "Nem találtam táblát a dokumentumban.");
+  } catch(e){
+    const msg = {cancelled:"Megállítva.", not_granted:"A Claude-funkció nincs engedélyezve ehhez az oldalhoz.", rate_limited:"Túl sok kérés, próbálja újra egy perc múlva.", invalid_json:"Nem jött értelmezhető válasz, próbálja újra.", image_rejected:"A képet nem sikerült feldolgozni.", prompt_too_large:"A dokumentum túl nagy, próbálja kevesebb oldallal."}[e?.code] || "Most nem sikerült feldolgozni. Próbálja újra.";
+    setReadBusy(false, msg);
+  }
+}
+
+/* Feltöltés: a dokumentum típusát Claude ismeri fel (EK táblalista vagy igazolás / ENAR egyedleltár) */
+async function runAuto(reqBody, fname){
+  if (!sample){ readStatus.textContent = "A Claude-funkció ebben a nézetben nem érhető el."; return; }
+  readCtl = new AbortController();
+  setReadBusy(true, "Claude olvassa a dokumentumot… (fél–egy perc is lehet)");
+  try {
+    const r = await apiJson("/api/read", reqBody, readCtl.signal);
+    if (r?.tipus_kod === "egyeb"){ readItems = []; document.getElementById("readOut").hidden = true; setReadBusy(false, "A feltöltött dokumentum nem Egységes Kérelem, Kormányhivatali Igazolás, ENAR Egyedleltár vagy Állatorvosi Igazolás."); return; }
+    readMetaInfo = r?.dokumentum || null;
+    const warns = Array.isArray(r?.figyelmeztetesek) ? r.figyelmeztetesek.map(String) : [];
+    const isEk = r?.tipus_kod === "ek" || (Array.isArray(r?.tablak) && r.tablak.length && !(Array.isArray(r?.tetelek) && r.tetelek.length));
+    if (isEk){
+      readItems = ekToItems(Array.isArray(r?.tablak) ? r.tablak : []).filter(t => t.q > 0);
+    } else {
+      readItems = (Array.isArray(r?.tetelek) ? r.tetelek : []).map(t => ({
+        code: String(t.termek_kod||"").trim(), q: Number(String(t.mennyiseg).replace(",", ".")) || 0,
+        hely: String(t.hely||""), orig: String(t.eredeti||""), note: String(t.megjegyzes||""), on: true
+      })).filter(t => t.q > 0);
+      readItems.forEach(t => { if (!P[t.code]) { t.on = false; t.note = (t.note? t.note+" ":"") + `Ismeretlen kód: ${t.code}`; } });
+    }
+    renderRead(warns, isEk ? "ek" : "doc");
+    if (fname && readItems.length){
+      const m = readMetaInfo || {}, tip = [m.tipus || (isEk ? "Egységes kérelem" : ""), m.ev].filter(Boolean).join(", ");
+      S.docs = (S.docs || []).filter(x => x.name !== fname).concat([{name: fname, tipus: tip}]); save();
+    }
+    setReadBusy(false, readItems.length ? "" : "Nem találtam beírható tételt a dokumentumban.");
+  } catch(e){
+    const msg = {cancelled:"Megállítva.", not_granted:"A Claude-funkció nincs engedélyezve ehhez az oldalhoz.", rate_limited:"Túl sok kérés, próbálja újra egy perc múlva.", invalid_json:"Nem jött értelmezhető válasz, próbálja újra.", image_rejected:"A képet nem sikerült feldolgozni (túl nagy vagy rossz formátum).", prompt_too_large:"A dokumentum túl nagy, próbálja kevesebb oldallal."}[e?.code] || "Most nem sikerült feldolgozni. Próbálja újra.";
+    setReadBusy(false, msg);
+  }
+}
+
+/* ---------- Okos chat: kérdez, amíg be nem sorolható ---------- */
+const chatLog = document.getElementById("chatLog"), chatIn = document.getElementById("chatIn");
+let chatTurns = [], chatCtl = null;
+try { const c = JSON.parse(sessionStorage.getItem("okos-ste-sajat-chat2")); if (Array.isArray(c)) chatTurns = c; } catch(e){}
+const saveChat = () => { try { sessionStorage.setItem("okos-ste-sajat-chat2", JSON.stringify(chatTurns.slice(-40))); } catch(e){} };
+/* CHAT_RULES: a közvetítőben (szerveren) van */
+function stateSummary(){
+  const rows = ORDER.filter(c => Q(c) > 0).map(c => `- ${c} ${P[c].name}: ${fmtN(Q(c))} ${UNIT_TXT(P[c].unit)}`);
+  const {t} = totals();
+  return rows.length ? `Az STÉ fülön már szerepel (összesen ${fmtE(t)}):\n${rows.join("\n")}` : "Az STÉ fül még üres.";
+}
+const visibleText = t => t.replace(/```ste[\s\S]*?(```|$)/g, "").replace(/\n{3,}/g, "\n\n").trim();
+function parseBlocks(t){
+  const items = [];
+  for (const m of t.matchAll(/```ste\s*([\s\S]*?)```/g)){
+    try { const j = JSON.parse(m[1]); (j.tetelek||[]).forEach(x => { const c = String(x.termek_kod||"").trim(), q = Number(String(x.mennyiseg).replace(",", ".")); if (P[c] && q >= 0 && isFinite(q)) items.push({code:c, q, desc:String(x.leiras||"")}); }); } catch(e){}
+  }
+  return items;
+}
+function md(s){ return esc(s).replace(/\*\*(.+?)\*\*/g,"<strong>$1</strong>").replace(/\n/g,"<br>"); }
+function doneLine(a, key){
+  const p = P[a.code]; if (!p) return "";
+  if (a.q === 0) return `<div class="done del"><span>✓ Töröltem: ${esc(p.name)}</span></div>`;
+  return `<div class="done${a.removed ? " gone" : ""}"><span>✓ Beírtam: ${esc(p.name)} · ${fmtN(a.q)} ${esc(UNIT_TXT(p.unit))} · ${fmtE(eur(p.ft)*a.q)}</span>${a.removed ? "" : `<button type="button" data-unapply="${key}" title="Törlés a táblázatból" aria-label="Törlés a táblázatból">×</button>`}</div>`;
+}
+/* Claude válaszában lévő tételek beírása (felülírás: a mennyiség a tétel teljes mennyisége, 0 = törlés) */
+function applyItems(items){
+  const done = [];
+  items.forEach(it => { if (it.q > 0) S.q[it.code] = +it.q.toFixed(6); else delete S.q[it.code]; done.push({code: it.code, q: it.q}); });
+  if (done.length){ save(); buildSte(); refresh(); }
+  return done;
+}
+const START_CHIPS = ["Állataim vannak", "Gyümölcsös vagy szőlő", "Szántóföldi növények", "Zöldség, fólia"];
+function renderChat(){
+  document.getElementById("chatWelcome").innerHTML = `Jó napot! Mondja el a saját szavaival, mit termel és milyen állatai vannak, például: „2 hektár almám van és 20 méhcsaládom”. Kiszámolom, belefér-e a gazdasága a pályázatba.${chatTurns.length ? "" : `<div class="startchips">${START_CHIPS.map(c => `<button type="button" data-startchip="${esc(c)}">${esc(c)}</button>`).join("")}<button type="button" data-goread>Dokumentumot töltök fel</button></div>`}`;
+  const parts = [];
+  let lastBot = -1;
+  chatTurns.forEach((t, i) => {
+    if (t.role === "user") parts.push(`<div class="msg me">${md(t.content)}</div>`);
+    else {
+      lastBot = i;
+      const lines = (t.applied || []).map((a, j) => doneLine(a, i + "-" + j)).join("");
+      parts.push(`<div class="msg bot">${md(visibleText(t.content))}${lines ? `<div class="items">${lines}</div>` : ""}</div>`);
+    }
+  });
+  const hasItems = ORDER.some(c => Q(c) > 0);
+  const closed = chatTurns.length && chatTurns[chatTurns.length - 1].local;
+  if (hasItems && !closed && lastBot === chatTurns.length - 1)
+    parts.push(`<div class="finish"><button type="button" class="primary" data-finish>Nincs más</button><span class="sub">Ha van még más növénye vagy állata, írja le nyugodtan.</span></div>`);
+  chatLog.innerHTML = parts.join("") + `<div id="chatLive"></div>`;
+  chatLog.scrollTop = chatLog.scrollHeight;
+}
+document.getElementById("pane-chat").addEventListener("click", e => {
+  const u = e.target.closest("[data-unapply]");
+  if (u){ const [i, j] = u.dataset.unapply.split("-").map(Number); const a = chatTurns[i]?.applied?.[j];
+    if (a){ delete S.q[a.code]; a.removed = true; save(); saveChat(); buildSte(); refresh(); renderChat(); toast(`Törölve a táblázatból: ${P[a.code].name}`); } return; }
+  const c = e.target.closest("[data-startchip]"); if (c){ chatIn.value = c.dataset.startchip + "."; sendChat(); return; }
+  if (e.target.closest("[data-goread]")){ showTab("read"); return; }
+  if (e.target.closest("[data-finish]")){
+    const {t} = totals(); const [, lbl] = status(t);
+    chatTurns.push({role: "assistant", local: true, content: `Rendben, köszönöm! Összesen kb. ${fmtE(t)} STÉ jött ki (${lbl}). Átviszem az STÉ fülre, ott látja a részleteket.`});
+    saveChat(); renderChat();
+    setTimeout(() => { showTab("ste"); const bar = document.querySelector(".sumbar"); bar.classList.add("flash"); setTimeout(() => bar.classList.remove("flash"), 1600); }, 700);
+  }
+});
+
+async function sendChat(){
+  const text = chatIn.value.trim(); if (!text || chatCtl) return;
+  if (!sample){ toast("A Claude-funkció ebben a nézetben nem érhető el."); return; }
+  chatTurns.push({role:"user", content:text}); chatIn.value = ""; saveChat(); renderChat();
+  const live = document.getElementById("chatLive"); live.className = "msg bot"; live.textContent = "Gondolkodom…";
+  chatCtl = new AbortController(); document.getElementById("chatStop").hidden = false;
+  try {
+    const r = await apiChat(chatTurns.filter(t => !t.local).map(t => ({role: t.role, content: t.content})).slice(-30), stateSummary(), ({text}) => { live.innerHTML = md(visibleText(text)) || "…"; chatLog.scrollTop = chatLog.scrollHeight; }, chatCtl.signal);
+    const applied = applyItems(parseBlocks(r.text));
+    chatTurns.push({role:"assistant", content:r.text, applied}); saveChat();
+  } catch(e){
+    if (e?.text) { chatTurns.push({role:"assistant", content:e.text}); saveChat(); }
+    const msg = {cancelled:"", not_granted:"A Claude-funkció nincs engedélyezve ehhez az oldalhoz.", rate_limited:"Mára elérte a kérdések számának korlátját, vagy túl sokan használják most. Próbálja újra később.", network:"Nincs internetkapcsolat, vagy a szolgáltatás nem érhető el.", refused:"Erre nem tudok válaszolni, kérem fogalmazza meg másképp."}[e?.code];
+    if (msg !== "") toast(msg || "Most nem sikerült választ kapni. Próbálja újra.");
+  } finally { chatCtl = null; document.getElementById("chatStop").hidden = true; renderChat(); chatIn.focus(); }
+}
+document.getElementById("chatForm").addEventListener("submit", e => { e.preventDefault(); sendChat(); });
+chatIn.addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey){ e.preventDefault(); sendChat(); } });
+document.getElementById("chatStop").addEventListener("click", () => chatCtl?.abort());
+renderChat();
+const howto = document.getElementById("howto");
+
+/* ---------- Visszahívás kérése (SAPI) ---------- */
+const leadWrap = document.getElementById("leadWrap"), leadForm = document.getElementById("leadForm"), leadMsg = document.getElementById("leadMsg");
+function leadSummary(){
+  const {t} = totals(); const [,lbl] = status(t);
+  const items = ORDER.filter(c => Q(c) > 0).map(c => ({code:c, name:P[c].name, q:fmtN(Q(c)), unit:UNIT_TXT(P[c].unit), eur:Math.round(counted(c).e)}));
+  return {total: Math.round(t), status: lbl, items};
+}
+function openLead(){
+  const s = leadSummary();
+  document.getElementById("leadSum").innerHTML = s.items.length ? `<strong>${fmtE(s.total)} · ${esc(s.status)}</strong><br>${s.items.map(i => `${esc(i.name)}: ${esc(i.q)} ${esc(i.unit)}`).join("<br>")}` : "Az STÉ fül még üres. A számítást a hívás során közösen is elkészíthetjük.";
+  leadMsg.textContent = ""; leadWrap.hidden = false; setTimeout(() => document.getElementById("lName").focus(), 0);
+}
+document.addEventListener("click", e => { if (e.target.closest("[data-lead]")) openLead(); });
+document.getElementById("leadClose").addEventListener("click", () => leadWrap.hidden = true);
+leadWrap.addEventListener("click", e => { if (e.target === leadWrap) leadWrap.hidden = true; });
+document.addEventListener("keydown", e => { if (e.key === "Escape" && !leadWrap.hidden) leadWrap.hidden = true; });
+leadForm.addEventListener("submit", async e => {
+  e.preventDefault();
+  const v = id => document.getElementById(id).value.trim();
+  const body = {name: v("lName"), phone: v("lPhone"), email: v("lEmail"), city: v("lCity"), note: v("lNote"),
+    consent: document.getElementById("lConsent").checked, newsletter: document.getElementById("lNews").checked, ste: leadSummary()};
+  const chatNote = chatTurns.filter(t => t.role === "user").map(t => t.content).join(" | ").slice(0, 800);
+  if (chatNote) body.note = (body.note ? body.note + "\n" : "") + "Chat: " + chatNote;
+  if (!body.name){ leadMsg.textContent = "Kérjük, adja meg a nevét."; return; }
+  if (!/^(\+36|06|36)?\d{8,9}$/.test(body.phone.replace(/[^\d+]/g, ""))){ leadMsg.textContent = "Kérjük, adjon meg érvényes magyar telefonszámot."; return; }
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(body.email)){ leadMsg.textContent = "Kérjük, adjon meg érvényes e-mail-címet."; return; }
+  if (!body.consent){ leadMsg.textContent = "A küldéshez szükséges a hozzájárulás az adatkezeléshez."; return; }
+  const btn = document.getElementById("leadSend"); btn.disabled = true; leadMsg.textContent = "Küldés…";
+  try {
+    await apiJson("/api/lead", body);
+    leadForm.reset(); leadWrap.hidden = true;
+    toast("Köszönjük! Megkaptuk az adatait, Szalontai Jenő hamarosan hívja.");
+  } catch(err){
+    leadMsg.textContent = {rate_limited:"Túl sok küldés erről a címről. Próbálja később, vagy hívjon minket.", bad_request:"Kérjük, ellenőrizze a megadott adatokat.", network:"Nincs internetkapcsolat."}[err?.code] || "Most nem sikerült elküldeni. Kérjük, próbálja újra.";
+  } finally { btn.disabled = false; }
+});
+
+buildSte(); refresh();
+
+/* ===== Saját példány: Claude a claude.ai-fiókon keresztül (sample képesség), nem az API-n ===== */
+const SRV = (function(){
+const DATA = {"p":[["C1110T","Közönséges búza és tönköly","ha",365892,"Növénytermesztés",0],["C1120T","Durumbúza","ha",428702,"Növénytermesztés",0],["C1200T","Rozs","ha",190390,"Növénytermesztés",0],["C1300T","Árpa","ha",344638,"Növénytermesztés",0],["C1400T","Zab","ha",184449,"Növénytermesztés",0],["C1500T","Szemeskukorica","ha",418328,"Növénytermesztés",0],["C1600T_C1700T_C1900T","Tritikálé, cirok és egyéb máshova nem sorolt gabonafélék (hajdina, köles, kanári mag stb.)","ha",238669,"Növénytermesztés",0],["C2000T","Rizs","ha",478418,"Növénytermesztés",0],["P0000T","Száraz hüvelyesek: borsón, lóbabon és édes csillagfürtön kívül","ha",290419,"Növénytermesztés",0],["P1000T","Száraz hüvelyesek: borsó, bab és édes csillagfürt","ha",289944,"Növénytermesztés",0],["R1000T","Burgonya (vetőburgonya is)","ha",3392685,"Kertészet",1],["R2000T","Cukorrépa (kivéve vetőmag)","ha",585582,"Növénytermesztés",0],["R9000T","Takarmánygyökerek és káposzták","ha",642362,"Növénytermesztés",0],["I1110T","Káposztarepce és réparepce","ha",421707,"Növénytermesztés",0],["I1120T","Napraforgó","ha",387177,"Növénytermesztés",0],["I1130T","Szója","ha",375602,"Növénytermesztés",0],["I1140T","Lenmag (olajlen)","ha",403804,"Növénytermesztés",0],["I1190T","Máshova nem sorolt egyéb olajos magvúak","ha",354384,"Növénytermesztés",0],["I2200T","Kender","ha",348151,"Növénytermesztés",0],["I3000T","Dohány","ha",813667,"Növénytermesztés",0],["I4000T","Komló","ha",2660689,"Növénytermesztés",0],["I5000T","Aromanövények, gyógyhatású és fűszernövények","ha",1073772,"Kertészet",1],["I6000T_I9000T","Egyéb, máshová nem sorolt energia és ipari növények","ha",288000,"Növénytermesztés",0],["G1000T","Időszaki gyep","ha",51571,"Növénytermesztés",0],["G2000T","Takarmánynövények - Zölden betakarított hüvelyesek","ha",95753,"Növénytermesztés",0],["G3000T","Silókukorica","ha",340103,"Növénytermesztés",0],["G9100T_G9900T","Takarmánynövények - Egyéb zölden betakarított gabonafélék (kivéve silókukorica)","ha",207023,"Növénytermesztés",0],["V0000_S0000TK","Kertészeti növényekkel vetésforgóban termesztett friss zöldségfélék (dinnyével együtt) és szamóca (árutermelő kertészet)","ha",3627233,"Kertészet",1],["V0000_S0000TO","Szántóföldi növényekkel vetésforgóban termesztett friss zöldségfélék (dinnyével együtt) és szamóca (szabadföldi termesztés)","ha",2325717,"Kertészet",1],["N0000T","Virágok és dísznövények (a faiskolákat kivéve, szabadföldi termesztés)","ha",12657556,"Kertészet",1],["E0000T","Szántóföldi szaporítóanyagok, magvak és palánták","ha",448175,"Növénytermesztés",0],["ARA99T_ARA09S","Egyéb szántóföldi növények","ha",235988,"Növénytermesztés",0],["J1000T","Legelő és rét, kivéve a külterjes legelőt","ha",41369,"Növénytermesztés",0],["J2000T","Külterjes legelő","ha",26031,"Növénytermesztés",0],["F1000T","Máshova nem sorolt gyümölcsültetvények","ha",1132981,"Kertészet",1],["F1100T","Almatermésűek","ha",1345669,"Kertészet",1],["F1200T","Csonthéjasok","ha",944704,"Kertészet",1],["F3000T","Bogyós gyümölcsök (kivéve szamóca)","ha",918082,"Kertészet",1],["F4000T","Héjasok","ha",526014,"Kertészet",1],["W1110T","Minőségi borszőlő ültetvények","ha",774934,"Kertészet",1],["W1190T","Egyéb borszőlő ültetvények","ha",697198,"Kertészet",1],["W1200T","Csemegeszőlő","ha",1031748,"Kertészet",1],["L0000T","Faiskolák (szabadföldi)","ha",6335334,"Kertészet",1],["PECR9_H9000T","Egyéb ültetvények","ha",4450694,"Kertészet",1],["X0000T","Karácsonyfa","ha",4410832,"Kertészet",0],["K0000T_UAA09S","Konyhakertek","ha",1869481,"Kertészet",0],["U1000","Termesztett gomba","100m²",5296725,"Kertészet",1],["V0000_S0000S","Zöldségfélék, dinnye és szamóca is, üvegházban, illetve más járható védőborítás (termesztőberendezés) alatt","ha",41191157,"Kertészet",1],["N0000S","Virágok és dísznövények üvegházban, illetve más járható védőborítás alatt","ha",56932230,"Kertészet",1],["PECRS","Ültetvények üvegházban, illetve más járható védőborítás (termesztőberendezés) alatt","ha",16605881,"Kertészet",1],["A2010","1 évesnél fiatalabb szarvasmarha","db",227074,"Állattenyésztés",0],["A2120","1 és 2 év közötti életkorú hímivarú szarvasmarha","db",233771,"Állattenyésztés",0],["A2220","1 és 2 év közötti életkorú üsző","db",84590,"Állattenyésztés",0],["A2130","Legalább kétéves hímivarú szarvasmarha","db",228025,"Állattenyésztés",0],["A2230","Legalább kétéves üsző","db",134283,"Állattenyésztés",0],["A2300","Kettős hasznú tehén","db",586226,"Állattenyésztés",0],["A2300F","Tejhasznú tehén","db",954600,"Állattenyésztés",0],["A2300G","Húshasznú tehén","db",99971,"Állattenyésztés",0],["A2410","Bivalytehén","db",470353,"Állattenyésztés",0],["A4110K","Anyajuhok","db",26774,"Állattenyésztés",0],["A4120","Egyéb juhok","db",47203,"Állattenyésztés",0],["A4210K","Anyakecskék","db",59950,"Állattenyésztés",0],["A4220","Egyéb kecskék","db",32118,"Állattenyésztés",0],["A3110","Sertés, 20 kilogrammnál kisebb élősúlyú malac","db",115173,"Állattenyésztés",0],["A3120","Sertés, legalább 50 kg-os tenyészkoca","db",393751,"Állattenyésztés",0],["A3130","Egyéb sertés","db",89395,"Állattenyésztés",0],["A5140","Brojlercsirke","100 db",478364,"Állattenyésztés",0],["A5110O","Tojótyúk","100 db",731632,"Állattenyésztés",0],["A5230","Pulyka","100 db",1397383,"Állattenyésztés",0],["A5210","Kacsa","100 db",742019,"Állattenyésztés",0],["A5220","Lúd","100 db",1485112,"Állattenyésztés",0],["A5410","Strucc","100 db",7900393,"Állattenyésztés",0],["A5240_5300","Máshova nem sorolt egyéb baromfi (gyöngytyúk, fürj, galamb)","100 db",1680118,"Állattenyésztés",0],["A6111","Nyúl, nőivarú tenyészállat","db",96238,"Állattenyésztés",0],["A6710R","Méhcsaládok","kaptár",32974,"Állattenyésztés",0],["C_8","Naposcsibe","100 db",178273,"Állattenyésztés",0],["C_9","Előnevelt csirke","100 db",631076,"Állattenyésztés",0],["C_10","Fácán","100 db",248473,"Állattenyésztés",0],["C_11","Fogoly","100 db",245787,"Állattenyésztés",0],["C_12","Emu","100 db",5868244,"Állattenyésztés",0],["C_13","Csincsilla, nőivarú tenyészállat","db",23977,"Állattenyésztés",0],["C_14","Dámszarvas","db",140043,"Állattenyésztés",0],["C_15","Gímszarvas","db",322862,"Állattenyésztés",0],["C_16","Muflon","db",125039,"Állattenyésztés",0],["C_17","Vaddisznó","db",89395,"Állattenyésztés",0],["C_18","Lófélék","db",332800,"Állattenyésztés",0]],"k":[["ABE01","Abesszin (etiópiai) mustár","I1190T"],["AGF02","Angyalgyökér (Angelika)","I5000T"],["AGF03","Kamilla","I5000T"],["AGF05","Digitalis","I5000T"],["AGF06","Tárnics","I5000T"],["AGF07","Izsóp","I5000T"],["AGF08","Jázmin","I5000T"],["AGF09","Levendula","I5000T"],["AGF10","Majoranna","I5000T"],["AGF11","Menta (egyéb)","I5000T"],["AGF12","Meténg (egyéb)","I5000T"],["AGF13","Utifű (Psyllium)","I5000T"],["AGF14","Sáfrány","I5000T"],["AGF15","Körömvirág","I5000T"],["AGF17","Macskagyökérfű","I5000T"],["AGF18","Tárkony","I5000T"],["AGF19","Fűszerkömény","I5000T"],["AGF20","Citromfű","I5000T"],["AGF21","Bazsalikom","I5000T"],["AGF22","Rozmaring","I5000T"],["AGF23","Lestyán","I5000T"],["AGF24","Szöszös ökörfarkkóró","I5000T"],["AGF25","Anyarozs","I5000T"],["AGF26","Kapor","I5000T"],["AGF28","Ánizs","I5000T"],["AGF29","Borsikafű (egyéb)","I5000T"],["AGF30","Koriander","I5000T"],["AGF31","Máriatövis","I5000T"],["AGF32","Kerti kakukkfű","I5000T"],["AGF33","Sáfrányos szeklice","I5000T"],["AGF35","Orvosi zsálya","I5000T"],["AGF36","Kerti ruta","I5000T"],["AGF37","Ánizsizsóp","I5000T"],["AGF38","Ánizsmenta","I5000T"],["AGF39","Bíbor kasvirág (Echinacea)","I5000T"],["AGF40","Cickafark","I5000T"],["AGF41","Oregánó (szurokfű)","I5000T"],["AGF44","Borágó","I5000T"],["AGF47","Gyermekláncfű","I5000T"],["AGF48","Jázminpakóca (stevia)","I5000T"],["ALL01","Állandó gyep (legeltetett)","J1000T"],["ALL02","Állandó gyep (kaszált)","J1000T"],["BUR01","Burgonya","R1000T"],["CUK01","Cukorrépa","R2000T"],["DBU01","Dohány- Burley","I3000T"],["DVI02","Dohány- Virginia","I3000T"],["EGY01","Egyéb szántóföldi termelt növény","A09S,C1110T,C1120T,C1200T,C1300T,C1400T,C1500T,C1600T_C1700T_C1900T,C2000T,E0000T,G1000T,G2000T,G3000T,G9100T_G9900T,I1110T,I1120T,I1130T,I1140T,I1190T,I2200T,I3000T,I4000T,I5000T,I6000T_I9000T,N0000T,"],["FAT01","Gyümölcsfaiskola","L0000T"],["FAT02","Szőlőoltvány-iskola","L0000T"],["FAT03","Dísznövény-, és erdészeti faiskola","L0000T"],["FLO01","Lágyszárú dísznövény","N0000T"],["FLO02","Dísznövény ültetvény","N0000T"],["FOR01","Lucerna","G2000T"],["FOR02","Lucerna erjesztett takarmány","G2000T"],["FOR03","Lucerna zöldtakarmány","G2000T"],["FOR04","Komlós lucerna","G2000T"],["FOR05","Sárkerep lucerna","G2000T"],["FOR06","Tarkavirágú lucerna","G2000T"],["FOR09","Vöröshere","G2000T"],["FOR10","Bíborhere","G2000T"],["FOR11","Fehérhere","G2000T"],["FOR12","Korcshere (svédhere)","G2000T"],["FOR13","Perzsahere (fonákhere)","G2000T"],["FOR14","Alexandriai here","G2000T"],["FOR15","Lódi lóhere","G2000T"],["FOR23","Sárgavirágú somkóró (orvosi somkóró)","G2000T"],["FOR24","Fehérvirágú somkóró","G2000T"],["FOR25","Takarmánybaltacim","G2000T"],["FOR27","Szarvaskerep","G2000T"],["FOR28","Nyúlszapuka","G2000T"],["FOR29","Szeradella","G2000T"],["FOR30","Koronás baltavirág","G2000T"],["FOR32","Réparepce","G9100T_G9900T"],["FOR33","Tifon","R9000T"],["FOR34","Tarlórépa","R9000T"],["FOR35","Takarmányrépa","R9000T"],["FOR36","Csicsóka","R9000T"],["FOR37","Murokrépa","R9000T"],["FOR38","Tarka koronafürt","G2000T"],["FOR39","Görög széna","G2000T"],["FOR40","Keleti kecskeruta","G2000T"],["FOR41","Mézontófű (Facélia)","G9100T_G9900T"],["FOR56","Füves lucerna","G9100T_G9900T"],["FOR57","Füves here","G9100T_G9900T"],["FOR58","Takarmánymályva","G9100T_G9900T"],["FOR59","Szilfium","G9100T_G9900T"],["FOR60","Lósóska","G9100T_G9900T"],["FRU01","Görögdinnye","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["FRU02","Tökre oltott görögdinnye","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["FRU03","Sárgadinnye","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["FRU04","Földieper (szamóca)","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["FRU05","Ribiszke","F3000T"],["FRU08","Málna","F3000T"],["FRU09","Piszke (köszméte/egres)","F3000T"],["FRU11","Szeder","F3000T"],["FRU12","Tüske nélküli szeder","F3000T"],["FRU13","Yosta (rikö)","F3000T"],["FRU14","Homoktövis","F3000T"],["FRU15","Fekete Bodza","F3000T"],["FRU16","Egyéb bodza","F3000T"],["FRU17","Áfonya","F3000T"],["FRU18","Berkenye","F3000T"],["FUM01","Füves mezsgye","-"],["GYE01","Ideiglenes gyep (legeltetett)","G1000T"],["GYE02","Ideiglenes gyep (kaszált)","G1000T"],["HAG01","Hagyományos gyümölcsös alma","F1100T"],["HAG03","Hagyományos gyümölcsös őszibarack","F1200T"],["HAG04","Hagyományos gyümölcsös kajszibarack (sárgabarack)","F1200T"],["HAG06","Hagyományos gyümölcsös szilva","F1200T"],["HAG07","Hagyományos gyümölcsös naspolya","F1100T"],["HAG08","Hagyományos gyümölcsös dió","F4000T"],["HAG09","Hagyományos gyümölcsös mogyoró","F4000T"],["HAG10","Hagyományos gyümölcsös mandula","F4000T"],["HAG11","Hagyományos gyümölcsös szelídgesztenye","F4000T"],["HAG12","Hagyományos gyümölcsös vegyes","F1000T"],["HAG15","Hagyományos gyümölcsös körte","F1100T"],["HAG16","Hagyományos gyümölcsös meggy","F1200T"],["HAG17","Hagyományos gyümölcsös cseresznye","F1200T"],["HAG18","Hagyományos gyümölcsös birs","F1100T"],["HAG19","Hagyományos gyümölcsös nektarin","F1200T"],["HAG20","Hagyományos gyümölcsös bodza","F3000T"],["HAG21","Hagyományos gyümölcsös homoktövis","F3000T"],["HAG22","Hagyományos gyümölcsös Áfonya","F3000T"],["HAG23","Hagyományos gyümölcsös Berkenye","F3000T"],["HAG24","Hagyományos gyümölcsös Fekete berkenye","F3000T"],["HAG25","Hagyományos gyümölcsös Fehér eperfa","F3000T"],["HAG26","Hagyományos gyümölcsös Fekete eperfa","F3000T"],["IND01","Szójabab","I1130T"],["IND03","Őszi káposztarepce","I1110T"],["IND04","Tavaszi káposztarepce","I1110T"],["IND06","Szezámmag","I1190T"],["IND07","Olajlen","I1140T"],["IND08","Rostlen","-"],["IND09","Földimogyoró","I1190T"],["IND11","Fehér mustár","I1190T"],["IND12","Fekete mustár","I1190T"],["IND13","Ricinus","I1190T"],["IND14","Mák (tavaszi)","I1190T"],["IND15","Retek","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["IND16","Olajretek","I1190T"],["IND18","Takarmányretek","R9000T"],["IND19","Négermag","I1190T"],["IND20","Vadrepce","I1190T"],["IND21","Gomborka (magvas)","I1190T"],["IND22","Cikória","I6000T_I9000T"],["IND23","Napraforgó","I1120T"],["IND24","Hibrid napraforgó","I1120T"],["KAL01","Őszi búza","C1110T"],["KAL02","Tavaszi búza","C1110T"],["KAL04","Őszi durumbúza","C1120T"],["KAL05","Tavaszi durumbúza","C1120T"],["KAL06","Őszi tönkölybúza","C1110T"],["KAL07","Tavaszi tönkölybúza","C1110T"],["KAL08","Őszi novum búza","C1110T"],["KAL09","Tavaszi novum búza","C1110T"],["KAL10","Őszi tönke búza","C1110T"],["KAL11","Tavaszi tönke búza","C1110T"],["KAL12","Őszi alakor búza","C1110T"],["KAL13","Tavaszi alakor búza","C1110T"],["KAL15","Rozs","C1200T"],["KAL16","Évelő rozs","G9100T_G9900T"],["KAL17","Őszi árpa","C1300T"],["KAL18","Tavaszi árpa","C1300T"],["KAL19","Tavaszi zab","C1400T"],["KAL20","Őszi zab","C1400T"],["KAL21","Kukorica","C1500T"],["KAL22","Pattogatni való kukorica","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["KAL23","Csemegekukorica","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["KAL24","Silókukorica","G3000T"],["KAL25","Hibrid kukorica","C1500T"],["KAL26","Tavaszi tritikálé","C1600T_C1700T_C1900T"],["KAL27","Őszi tritikálé","C1600T_C1700T_C1900T"],["KAL28","Pohánka (Hajdina)","C1600T_C1700T_C1900T"],["KAL29","Mohar","C1600T_C1700T_C1900T"],["KAL30","Cukorcirok","C1600T_C1700T_C1900T"],["KAL31","Seprűcirok","I6000T_I9000T"],["KAL32","Szemescirok","C1600T_C1700T_C1900T"],["KAL33","Silócirok","G9100T_G9900T"],["KAL34","Szudáni cirokfű","G9100T_G9900T"],["KAL35","Indiánrizs","C1600T_C1700T_C1900T"],["KAL36","Termesztett köles","C1600T_C1700T_C1900T"],["KAL37","Indiai köles","C1600T_C1700T_C1900T"],["KAL38","Fénymag","C1600T_C1700T_C1900T"],["KAL39","Fekete zab (homoki zab)","C1400T"],["KEN01","Kender","I2200T"],["KHK01","Konyhakertek","K0000T_UAA09S"],["KOM01","Komló","I4000T"],["MEH01","Méhlegelő","J2000T"],["NAD01","Nád","I6000T_I9000T"],["PAZ01","Ebtippan","G1000T"],["PAZ02","Óriás tippan","G1000T"],["PAZ03","Fehér tippan","G1000T"],["PAZ04","Cérnatippan","G1000T"],["PAZ05","Francia perje","G1000T"],["PAZ06","Csenkeszperje","G1000T"],["PAZ07","Olasz perje (szálkás perje)","G1000T"],["PAZ08","Angol perje","G1000T"],["PAZ09","Hibrid perje","G1000T"],["PAZ10","Ligeti perje","G1000T"],["PAZ11","Réti perje","G1000T"],["PAZ12","Mocsári perje","G1000T"],["PAZ13","Sovány perje","G1000T"],["PAZ14","Csomós ebír","G1000T"],["PAZ15","Nádképű csenkesz","G1000T"],["PAZ16","Juhcsenkesz","G1000T"],["PAZ17","Réti csenkesz","G1000T"],["PAZ18","Vörös csenkesz","G1000T"],["PAZ19","Gumós komócsin","G1000T"],["PAZ20","Réti komócsin","G1000T"],["PAZ21","Veresnadrág csenkesz","G1000T"],["PAZ22","Magyar rozsnok","G1000T"],["PAZ23","Zöld Pántlikafű","G1000T"],["PIH01","Talajtakarás nélküli pihentetett terület","-"],["PIL01","Cukorborsó","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["PIL02","Mezei borsó","P1000T"],["PIL03","Őszi takarmányborsó","P1000T"],["PIL04","Őszi zöldborsó","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["PIL05","Szárazborsó (Sárgaborsó)","P1000T"],["PIL06","Tavaszi takarmányborsó","P1000T"],["PIL07","Tavaszi zöldborsó","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["PIL09","Lóbab (Disznóbab)","P1000T"],["PIL11","Futóbab","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["PIL12","Szárazbab","P1000T"],["PIL13","Zöldbab","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["PIL14","Homoki bab (tehénborsó)","P0000T"],["PIL15","Fehérvirágú édes csillagfürt","P1000T"],["PIL16","Fehérvirágú édes csillagfürt (takarmány célra)","P1000T"],["PIL17","Fehérvirágú édes csillagfürt (zöldtrágyázásra)","-"],["PIL18","Sárgavirágú édes csillagfürt","P1000T"],["PIL19","Sárgavirágú édes csillagfürt (takarmány célra)","P1000T"],["PIL20","Sárgavirágú édes csillagfürt (zöldtrágyázásra)","-"],["PIL21","Kékvirágú édes csillagfürt","P1000T"],["PIL22","Kékvirágú édes csillagfürt (takarmány célra)","P1000T"],["PIL23","Kékvirágú édes csillagfürt (zöldtrágyázásra)","-"],["PIL24","Lencse","P0000T"],["PIL25","Takarmánybükköny (Tavaszi bükköny)","G2000T"],["PIL26","Szöszösbükköny","G2000T"],["PIL27","Pannonbükköny","G2000T"],["PIL29","Csicseriborsó","P0000T"],["PIL30","Szegletes lednek","P0000T"],["RIZ03","Rizs","C2000T"],["SZI01","Sziki kender","I2200T"],["UGA03","Zöldugar kultúra","-"],["ULT01","Alma","F1100T"],["ULT03","Őszibarack","F1200T"],["ULT04","Kajszibarack (sárgabarack)","F1200T"],["ULT05","Nektarin","F1200T"],["ULT06","Szilva","F1200T"],["ULT07","Naspolya","F1100T"],["ULT08","Dió","F4000T"],["ULT09","Mogyoró","F4000T"],["ULT10","Mandula","F4000T"],["ULT11","Szelídgesztenye","F4000T"],["ULT12","Vegyes gyümölcsös","F1000T"],["ULT15","Körte","F1100T"],["ULT16","Meggy","F1200T"],["ULT17","Cseresznye","F1200T"],["ULT18","Birs","F1100T"],["ULT19","Minőségi borszőlő ültetvény","W1110T"],["ULT20","Egyéb borszőlő szőlőültetvény","W1190T"],["ULT21","Füge","F3000T"],["ULT26","Csipkebogyó","F3000T"],["ULT27","Kivi","F3000T"],["ULT28","Egyéb ültetvény","F1000T;F3000T;F4000T;PECR9_H9000T,F1100T,F1200T"],["ULT29","Csemegeszőlő ültetvény","W1200T"],["ULT30","Fehér eperfa","F3000T"],["ULT31","Fekete eperfa","F3000T"],["ULT32","Fekete berkenye","F3000T"],["VEG01","Karfiol","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG02","Brokkoli","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG03","Bimbóskel","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG04","Fejes káposzta","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG05","Kelkáposzta","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG06","Vöröskáposzta","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG07","Takarmánykáposzta","R9000T"],["VEG08","Karalábé","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG09","Kínai kel","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG10","Zeller","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG11","Póréhagyma","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG12","Őszi fokhagyma","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG13","Tavaszi fokhagyma","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG14","Csemegehagyma","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG15","Őszi vöröshagyma","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG17","Lilahagyma","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG18","Metélőhagyma","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG19","Fejessaláta","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG20","Endívia","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG21","Sóska","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG22","Spenót","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG23","Spárga","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG24","Articsóka","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG25","Spanyol Articsóka","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG26","Petrezselyem gyökér (fehérrépa)","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG27","Petrezselyem levél","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG29","Rebarbara","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG30","Édeskömény (közönséges)","I5000T"],["VEG31","Galambbegysaláta","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG32","Zsázsa","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG33","Paradicsom","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG34","Uborka","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG35","Padlizsán (Tojásgyümölcs)","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG36","Főzőtök","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG37","Sütőtök","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG38","Káposztatök","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG39","Olajtök","I1190T"],["VEG40","Csillagtök/patiszon","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG41","Spárgatök","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG42","Cukkini","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG43","Paprika","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG44","Fűszerpaprika","I5000T"],["VEG45","Sárgarépa","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG46","Cékla","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG47","Feketegyökér","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG48","Torma","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG49","Pasztinák","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG50","Újzélandi spenót","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG51","Mezei csibehúr","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG52","Egyéb zöldség","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG53","Tavaszi vöröshagyma","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG54","Batáta (édesburgonya)","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["VEG55","Borsmustár (rukkola)","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["MEL01","Meliorációs retek","-"],["ULT33","Datolyaszilva","F1000T"],["ULT34","Teacserje","I5000T"],["BMB01","Bambusz","PECR9_H9000T"],["FAT06","Gyepiskola (gyepszőnyeg)","N0000T"],["IND25","Mák (őszi)","I1190T"],["VEG56","Fűszer (édes) édeskömény vagy római édeskömény","I5000T"],["VEG57","Olasz édeskömény vagy gumós édeskömény","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["GOM01","Gomba","U1000"],["ULT35","Húsos som","F3000T"],["ULT36","Kökény","F3000T"],["KAR01","Karácsonyfa ültetvény","X0000T"],["FAT05","Fenyőfa-faiskola","L0000T"],["AGF49","Hibrid levendula (lavandin)","I5000T"],["AGF50","Fehér üröm","I5000T"],["AGF51","Római kamilla","I5000T"],["AGF52","Nagy csalán","I5000T"],["AGF53","Orbáncfű","I5000T"],["AGF54","Vasfű (Verbena)","I5000T"],["AGF55","Kisvirágú füzike","I5000T"],["AGF56","Orvosi pemetefű","I5000T"],["AGF57","Évelő borsfű (borsikafű)","I5000T"],["AGF58","Orvosi ziliz (fehérmályva)","I5000T"],["AGF59","Muskotály zsálya","I5000T"],["AGF60","Tavaszi kankalin","I5000T"],["AGF61","Kis télizöld meténg","I5000T"],["AGF62","Borsmenta","I5000T"],["AGF63","Csombormenta","I5000T"],["AGF64","Lómenta","I5000T"],["AGF65","Terjőke kígyószisz","I5000T"],["AGF66","Ligeti zsálya","I5000T"],["HAG27","Hagyományos gyümölcsös mézbogyó","F3000T"],["HAG28","Hagyományos gyümölcsös kökény","F3000T"],["HAG29","Hagyományos gyümölcsös galagonya","F3000T"],["FLO03","Pillangóvirág","igazolásos(N0000TvagyN0000S)"],["FRU19","Tökre oltott sárgadinnye","igazolásos(V0000_S0000TOvagyV0000_S0000TK)"],["PIL31","Mogyorós lednek","P0000T"],["ULT37","Mézbogyó","F3000T"],["ULT38","Galagonya","F3000T"],["ULT39","Egybibés galagonya","F3000T"],["TAR10","Tarló","-"],["ULT40","Szőlőalany törzsültetvény (támberendezéssel)","L0000T"],["ULT41","Szőlőalany törzsültetvény (támberendezés nélkül)","L0000T"],["VAD01","Vadvirág (keverék)","-"]]};
+const EXCL = new Set();
+const PROD_LIST = DATA.p.filter(p => !EXCL.has(p[0])).map(([c,n,u,ft])=>`${c} | ${n} | ${u} | ${ft} Ft`).join("\n");
+const KOD_LIST = DATA.k.map(([e,n,m])=>`${e} | ${n} | ${m}`).join("\n");
+
+function promptFor(q){
+  return `Magyar mezőgazdasági pályázatkészítőnek segítesz. A KAP-RD09a-2-26 (Mezőgazdasági kisüzemek) felhívásban az üzemméretet Standard Termelési Értékben (STÉ) számolják, a 2020. évi STÉ-értékekkel.
+Feladat: sorold be ezt a növényt, kultúrát vagy állatot a megfelelő STÉ termékkódba: "${q}"
+
+Szabályok:
+- Csak az alábbi STÉ termékkódok közül választhatsz.
+- Ha a köznapi név egy hivatalos név szinonimája (pl. ribizli = ribiszke, egres = köszméte, aronia = fekete berkenye), mondd meg.
+- Ha az egységes kérelem hasznosítási kódlistájában szerepel, add meg a kódot.
+- Ha a besorolás a termesztés módjától függ (szabadföld/fólia, árutermelő kertészet/szántóföldi vetésforgó, hús/tej), add meg az alternatívákat és hogy mitől függ.
+- Ha nem számít bele az STÉ-be (pl. ugar, zöldtrágya), a termek_kod legyen null.
+- Ne találj ki kódot. Ha bizonytalan vagy, mondd meg.
+
+STÉ termékkódok (kód | megnevezés | egység | Ft/egység):
+${PROD_LIST}
+
+Egységes kérelem hasznosítási kódok (EK-kód | megnevezés | STÉ-kód):
+${KOD_LIST}
+
+Válaszolj CSAK egy JSON objektummal, ebben a formában:
+{"termek_kod":"F3000T","alternativ_kodok":[],"ek_kod":"FRU05 Ribiszke","hivatalos_nev":"ribiszke","indoklas":"1-2 mondat magyarul","mitol_fugg":"","biztossag":"biztos|valószínű|bizonytalan"}`;
+}
+
+function readPrompt(kind, payload){
+  return `Magyar mezőgazdasági pályázatkészítőnek segítesz a KAP-RD09a-2-26 (Mezőgazdasági kisüzemek) pályázat üzemméret-számításában (STÉ, 2020. évi értékek).
+${kind==="doc"
+ ? "Feladat: a csatolt dokumentumból (kormányhivatali igazolás, hatósági állatorvosi igazolás vagy egységes kérelem) olvasd ki az ÖSSZES nem nulla tételt: STÉ termékkód és mennyiség. A 0 vagy '--' sorokat hagyd ki. Ha a dokumentum EK hasznosítási kódot ír, a kódlista alapján add meg a hozzá tartozó STÉ termékkódot."
+ : "Feladat: az alábbi szabad szöveges leírásból (amit az ügyfél mondott) azonosítsd a tételeket, sorold be őket STÉ termékkódba, és váltsd át a mennyiséget."}
+Szabályok:
+- Csak az alábbi STÉ termékkódokat használhatod. Ne találj ki kódot.
+- A "mennyiseg" MINDIG a termékkód mértékegységében legyen: ha → hektár (1 ha = 10 000 m²); db → darab; "100 db" → százas egységben (pl. 1500 tyúk = 15); "100m²" (gomba) → 100 m²-es egységben (pl. 10 m² = 0,1); kaptár → méhcsaládok száma. Tizedesponttal add meg.
+- Fólia, üvegház alatti zöldség: V0000_S0000S; fedett ültetvény: PECRS; szabadföldi zöldség: V0000_S0000TO (ha árutermelő kertészet, V0000_S0000TK).
+- Ha egy sornál bizonytalan a besorolás vagy a szám, írd a megjegyzésbe.
+- A "hely" mezőbe tedd a települést, helyrajzi számot, blokkazonosítót, ha van; szöveges megadásnál az eredeti kifejezést.
+- A dokumentum adatait (típus, melyik pályázat melléklete, melyik évre szól, iktatószám, kedvezményezett neve) add meg, ha szerepelnek.
+
+STÉ termékkódok (kód | megnevezés | mértékegység | Ft/egység):
+${PROD_LIST}
+
+Egységes kérelem hasznosítási kódok (EK-kód | megnevezés | STÉ-kód):
+${KOD_LIST}
+${payload ? "\n" + payload : ""}
+
+Válaszolj CSAK egy JSON objektummal:
+{"dokumentum":{"tipus":"","felhivas":"","ev":"","iktatoszam":"","kedvezmenyezett":""},"tetelek":[{"termek_kod":"V0000_S0000S","mennyiseg":0.028,"hely":"Felsőzsolca 640 (F5M1VD23)","eredeti":"0,028 ha","megjegyzes":""}],"figyelmeztetesek":[]}`;
+}
+
+function ekPrompt(payload){
+  return `Magyar mezőgazdasági pályázatkészítőnek segítesz. A csatolt dokumentum egy egységes kérelem (EK) vagy annak táblalistája / határozata.
+Feladat: olvasd ki az ÖSSZES táblát (parcellát). Minden táblához add meg: táblasorszám, blokkazonosító, hasznosítási kód (pl. KAL01, NAP01, GYU03, HAG01 – pontosan úgy, ahogy a dokumentumban áll), a hasznosítás megnevezése, a terület hektárban (ha van igényelt és elfogadott/megállapított is, az elfogadottat add meg, és az igényeltet a megjegyzésbe), és hogy másodvetés/másodnövény-e.
+Ne sorold be STÉ-be, csak olvasd ki pontosan. Ha egy tábla több sorban szerepel (pl. főnövény és másodnövény), mindkettőt add meg, a másodnövényt masodvetes:true jelöléssel. A tizedesjelet ponttal add meg.
+Add meg a dokumentum adatait is: melyik évre szól, ügyfél neve, ügyfél-azonosító, a dokumentum típusa.
+${payload ? "\n" + payload : ""}
+
+Válaszolj CSAK egy JSON objektummal:
+{"dokumentum":{"tipus":"","ev":"","kedvezmenyezett":"","azonosito":""},"tablak":[{"tabla":"1","blokk":"F5M1VD23","kod":"KAL01","megnevezes":"Őszi búza","terulet_ha":2.35,"masodvetes":false,"megjegyzes":""}],"figyelmeztetesek":[]}`;
+}
+
+function autoPrompt(payload){
+  return `Magyar mezőgazdasági pályázatkészítőnek segítesz a KAP-RD09a-2-26 (Mezőgazdasági kisüzemek) pályázat üzemméret-számításában (STÉ, 2020. évi értékek).
+A megjegyzéseket és figyelmeztetéseket magyarul, magázva (Ön) fogalmazd, tegezés nélkül; a felhasználó gazdálkodó vagy pályázatíró. A figyelmeztetésekben ne adj össze területeket vagy összegeket (azt a kalkulátor számolja); csak az eltérést jelezd.
+ELŐSZÖR döntsd el, milyen dokumentum van csatolva, és ennek megfelelően válaszolj:
+
+(A) EGYSÉGES KÉRELEM (EK), annak táblalistája vagy határozata (táblák, blokkazonosítók, hasznosítási kódok) → "tipus_kod":"ek".
+Olvasd ki az ÖSSZES táblát: táblasorszám, blokkazonosító, hasznosítási kód (pl. KAL01, HAG01 – pontosan úgy, ahogy a dokumentumban áll), megnevezés, terület hektárban (ha van igényelt és elfogadott/megállapított is, az elfogadottat add meg, az igényeltet a megjegyzésbe), és hogy másodvetés-e. Ha "EGYSÉGES KÉRELEM – KIVONAT" szöveget kapsz, a TÁBLÁK részből add meg az összes táblát (a 16. összesítővel ellenőrizd az összegeket, eltérésnél figyelmeztess). Ne sorold be STÉ-be. Ha egy tábla több sorban szerepel (főnövény és másodnövény), mindkettőt add meg, a másodnövényt masodvetes:true jelöléssel.
+Válasz: {"tipus_kod":"ek","dokumentum":{"tipus":"Egységes kérelem","ev":"","kedvezmenyezett":"","azonosito":""},"tablak":[{"tabla":"1","blokk":"F5M1VD23","kod":"KAL01","megnevezes":"Őszi búza","terulet_ha":2.35,"masodvetes":false,"megjegyzes":""}],"figyelmeztetesek":[]}
+
+(B) MINDEN MÁS: kormányhivatali igazolás, hatósági (járási) állatorvosi igazolás, ENAR egyedleltár, ENAR állomány-kimutatás → "tipus_kod":"doc".
+Olvasd ki az ÖSSZES nem nulla tételt STÉ termékkóddal és mennyiséggel. A 0 vagy '--' sorokat hagyd ki.
+ENAR egyedleltárnál (az állatok egyenként, fülszámmal, születési dátummal, ivarral, fajtával) számold meg az állatokat kategóriánként, a dokumentum dátumához (ha nincs, a mai naphoz) viszonyított kor szerint:
+ - Szarvasmarha: tehén = már ellett nőivarú (ha nincs ellési adat, a 2 évesnél idősebb nőivarút vedd tehénnek, és írd a megjegyzésbe); tejhasznú A2300F, húshasznú A2300G, kettős hasznú (pl. magyartarka) A2300 – a fajta alapján, bizonytalanságnál megjegyzéssel. 1 év alatti A2010; 1–2 év közötti hím A2120, üsző A2220; 2 év feletti hím A2130, még nem ellett üsző A2230.
+ - Juh: anyajuh A4110K (legalább 1 éves nőivarú), egyéb juh A4120. Kecske: anyakecske A4210K, egyéb A4220. Ló, szamár C_18.
+ - A "hely" mezőbe a tartási hely (tenyészetkód, település) kerüljön, az "eredeti" mezőbe hogy hány egyedből számoltad.
+ - A figyelmeztetésekbe írd be: az egyedleltár napi állapot, a pályázatban az elmúlt 12 hónap átlagos létszáma számít.
+Szabályok:
+- Csak az alábbi STÉ termékkódokat használhatod. Ne találj ki kódot.
+- A "mennyiseg" MINDIG a termékkód mértékegységében legyen: ha → hektár (1 ha = 10 000 m²); db → darab; "100 db" → százas egységben (pl. 1500 tyúk = 15); "100m²" (gomba) → 100 m²-es egységben; kaptár → méhcsaládok száma. Tizedesponttal.
+- Fólia, üvegház alatti zöldség: V0000_S0000S; fedett ültetvény: PECRS; szabadföldi zöldség: V0000_S0000TO (ha árutermelő kertészet, V0000_S0000TK).
+- Ha egy sornál bizonytalan a besorolás vagy a szám, írd a megjegyzésbe.
+- A dokumentum adatait (típus, melyik pályázat melléklete, melyik évre szól, iktatószám, kedvezményezett neve) add meg, ha szerepelnek.
+Válasz: {"tipus_kod":"doc","dokumentum":{"tipus":"","felhivas":"","ev":"","iktatoszam":"","kedvezmenyezett":""},"tetelek":[{"termek_kod":"A2300G","mennyiseg":12,"hely":"","eredeti":"","megjegyzes":""}],"figyelmeztetesek":[]}
+
+(C) Ha a dokumentum EGYIK SEM a fentiek közül (nem egységes kérelem, nem kormányhivatali vagy állatorvosi igazolás, nem ENAR egyedleltár / állomány-kimutatás – pl. számla, szerződés, fénykép egy tárgyról, üres vagy olvashatatlan lap), ne találj ki tételeket → {"tipus_kod":"egyeb","dokumentum":{"tipus":"rövid leírás, mi látható"}}
+
+STÉ termékkódok (kód | megnevezés | mértékegység | Ft/egység):
+${PROD_LIST}
+
+Egységes kérelem hasznosítási kódok (EK-kód | megnevezés | STÉ-kód):
+${KOD_LIST}
+${payload ? "\n" + payload : ""}
+
+Válaszolj CSAK egy JSON objektummal, az (A), (B) vagy (C) formában.`;
+}
+
+const CHAT_RULES = `Te egy türelmes, gyakorlatias segítő vagy egy magyar pályázatkészítő irodában. A KAP-RD09a-2-26 (Mezőgazdasági kisüzemek beruházási támogatása) pályázathoz kell megállapítani a gazdálkodó üzemméretét Standard Termelési Értékben (STÉ, 2020. évi értékek, 348,93 Ft/€). A feltétel: legalább 5 000 €, de 10 000 €-nál kevesebb.
+A felhasználó többnyire gazda, aki nem tudja, mi az STÉ, és most használja először ezt az oldalt; néha a pályázatíró. Köznapi nyelven ír (pl. "van 20 marhám"). Az STÉ szót ne használd magyarázat nélkül; ha kérdezik, egy mondatban mondd el: a gazdaság éves termelési értéke euróban, a 2020-as hivatalos átlagárak alapján; ebből derül ki, mekkora a gazdaság, és belefér-e a pályázatba. A feladatod: addig kérdezz, amíg minden tételt egyértelműen be tudsz sorolni egy STÉ termékkódba, és tudod a mennyiséget.
+
+Hogyan kérdezz:
+- Egyszerre legfeljebb 1–2 rövid, érthető kérdést tegyél fel, választási lehetőségekkel (pl. "Tehenek, üszők vagy bikák? Ha tehén: tejelő vagy húsmarha?"). Ne használj szakzsargont magyarázat nélkül.
+- Ne kérdezz feleslegesen: ha a besoroláshoz nem kell, ne kérdezd.
+- Ha egy csoporton belül többféle állat van, kérd a darabszámot kategóriánként.
+- Válaszolj magyarul, tegezés nélkül, udvariasan, tömören.
+- Amit mondasz, tájékoztatás és ötlet, nem tanácsadás. Adhatsz ötletet és indoklást (pl. melyik pályázat vagy hitel jöhet szóba), de mindig ötletként fogalmazd meg, ne döntésként. Ha a felhasználó azt kérdezi, mit tegyen (pályázzon-e, melyik lehetőséget válassza), mondd el a szempontokat, és ajánld fel, hogy Szalontai Jenő, a Kalkulátor készítője és üzemeltetője visszahívja, és vele dönthet. Szakmai felelősséget csak az ő személyes tájékoztatásáért vállalunk.
+
+Besorolási szabályok:
+- Szarvasmarha: tehén = már ellett nőivarú (korától függetlenül): tejhasznú A2300F, húshasznú A2300G, kettős hasznú (pl. magyartarka) A2300. Bivalytehén A2410. 1 évesnél fiatalabb borjú A2010 (csak a tehénlétszámot meghaladó rész számít). 1–2 év közötti bika/tinó A2120, 1–2 év közötti üsző A2220. 2 évesnél idősebb bika/ökör A2130, 2 évesnél idősebb még nem ellett üsző A2230.
+- Juh: anyajuh A4110K (legalább 1 éves, tenyésztésre szánt nőivarú). Egyéb juh A4120 (kos, jerke, bárány, hízó) csak akkor számít, ha nincs anyajuh. Kecske ugyanígy: anyakecske A4210K, egyéb kecske A4220.
+- Sertés: tenyészkoca (legalább 50 kg) A3120; malac 20 kg alatt A3110 (csak ha nincs koca); egyéb sertés (süldő, hízó, kan) A3130.
+- Baromfi és vadmadár mennyisége 100 DARABOS egységben: tojótyúk (jérce, kakas is) A5110O, brojler A5140, pulyka A5230, kacsa A5210, lúd/liba A5220, gyöngytyúk/fürj/galamb A5240_5300, naposcsibe C_8, előnevelt csirke C_9, fácán C_10, fogoly C_11, strucc A5410, emu C_12.
+- Méhcsalád A6710R (kaptár = család). Anyanyúl A6111. Ló, szamár, öszvér C_18. Csincsilla C_13, dámszarvas C_14, gímszarvas C_15, muflon C_16, vaddisznó C_17.
+- Állatoknál az ELMÚLT 12 HÓNAP ÁTLAGOS létszáma számít (marhánál, juhnál, kecskénél az ENAR szerint). Ha a felhasználó csak mostani számot mond, kérdezd meg, egész évben ennyi volt-e.
+- Növényeknél a terület hektárban (1 ha = 10 000 m²). Zöldség (szamóca is): fólia/üvegház alatt V0000_S0000S; szabadföldön kertészeti vetésforgóban, árutermelő kertészetként V0000_S0000TK; szántóföldi vetésforgóban V0000_S0000TO. Virág: szabadföld N0000T, fedett N0000S. Fedett ültetvény PECRS. Gyümölcs: alma, körte, birs, naspolya F1100T; meggy, cseresznye, szilva, kajszi, őszibarack, nektarin F1200T; bogyós (ribizli, málna, egres, szeder, áfonya, bodza, aronia stb.) F3000T; dió, mogyoró, mandula, gesztenye F4000T; vegyes/egyéb gyümölcsös F1000T. Szőlő: minőségi borszőlő W1110T, egyéb borszőlő W1190T, csemegeszőlő W1200T. Gyógy-, aroma-, fűszernövény I5000T. Burgonya R1000T. Faiskola L0000T. Karácsonyfa X0000T. Konyhakert K0000T_UAA09S (legfeljebb 0,25 ha számít). Gomba U1000, 100 m²-es egységben.
+- Szántóföld: búza C1110T, durumbúza C1120T, rozs C1200T, árpa C1300T, zab C1400T, kukorica C1500T, tritikálé/köles/egyéb gabona C1600T_C1700T_C1900T, napraforgó I1120T, repce I1110T, szója I1130T, mák és egyéb olajos I1190T, lucerna és zölden betakarított hüvelyes G2000T, silókukorica G3000T, cukorrépa R2000T, száraz hüvelyes P0000T/P1000T. Gyep: rét, legelő J1000T; külterjes legelő J2000T; időszaki gyep G1000T. Ugar, parlag: 0. Másodvetés nem számít.
+- Igazolás: szabadföldi és fóliás zöldséghez, virághoz, fedett ültetvényhez, gombához és az egységes kérelemben nem szereplő területhez kormányhivatali igazolás kell; az ENAR-ban nem szereplő állatokhoz (baromfi, sertés, méh, nyúl, ló stb.) járási állatorvosi igazolás. Röviden jelezd, ha ilyen tétel van.
+
+Előminősítés: ha az STÉ fül összege 5 000 € és 10 000 € közé esik (MEGFELEL), röviden gratulálj, és ajánld fel, hogy a felül lévő "Ingyenes Előminősítést kérek" gombbal kérhet ingyenes Előminősítést Szalontai Jenőtől; a gomb az STÉ Jelentést (PDF) is csatolja.
+Dokumentum: ha a gazda egységes kérelmet, kormányhivatali vagy állatorvosi igazolást, ENAR-kimutatást említ, mondd el, hogy a "Feltöltések" fülön fel is töltheti, és onnan kiolvasom.
+
+Beírás: az oldal a lenti blokk alapján MAGÁTÓL beírja a tételeket a táblázatba (az STÉ fülre) – ne kérdezd meg, hogy beírja-e, és ne kérj gombnyomást. Ha egy tétel EGYÉRTELMŰEN besorolható és ismert a mennyisége, írd be: a blokk előtt egy rövid mondatban mondd el, mit írtál be és kb. hány € STÉ-t jelent (pl. "Beírtam: 1,5 ha almás, kb. 5 800 €."). Ha még bizonytalan, előbb kérdezz, és csak utána írd be.
+Minden beírás után kérdezd meg: "Van még más növénye vagy állata?", és tedd hozzá: "Ha nincs, nyomja meg a »Nincs más« gombot." – kivéve, ha még tisztázó kérdésed van.
+Javítás és törlés: ha a gazda javít ("nem 1,5, hanem 2 hektár"), add meg újra ugyanazt a kódot az új TELJES mennyiséggel; ha törölni kell egy tételt, add meg 0 mennyiséggel. Ha egy kód már szerepel a táblázatban és újabb mennyiség jön hozzá, az összesített teljes mennyiséget add meg.
+
+A blokk formája – a válaszod VÉGÉRE, csak az új vagy változott tételekkel:
+\`\`\`ste
+{"tetelek":[{"termek_kod":"A2300G","mennyiseg":12,"leiras":"12 húshasznú tehén (éves átlag)"}]}
+\`\`\`
+A "mennyiseg" a tétel TELJES mennyisége a termékkód mértékegységében (ha; db; baromfinál 100 db; gombánál 100 m²; méhcsalád); 0 = törlés. Csak az alábbi kódokat használhatod.
+
+STÉ termékkódok (kód | megnevezés | mértékegység | Ft/egység):
+`;
+
+const LEAD_RULE = `
+Témán kívüli kérdésekre (ami nem a gazdaság üzemméretéről, a besorolásról vagy erről a pályázatról szól) udvariasan jelezd, hogy ebben nem tudsz segíteni.`;
+
+
+return {readPrompt, ekPrompt, autoPrompt, CHAT_RULES, PROD_LIST, LEAD_RULE};
+})();
+let CS = null;
+(async () => {
+  if (window.claude && typeof window.claude.use === "function"){ try { CS = await window.claude.use("sample"); } catch(e){} }
+  const on = !!CS; STATUS = {ai: on, lead: false, privacy: ""}; sample = on ? true : null;
+  document.getElementById("tab-read").hidden = !on; document.getElementById("tab-chat").hidden = !on; if (on && !location.hash && !window.__tabTouched) showTab("chat", true);
+})();
+function b64ToBlob(b64, type){ const bin = atob(b64); const u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return new Blob([u], {type}); }
+function mapErr(e){
+  const c = e && e.code;
+  const code = ({cancelled:"cancelled", rate_limited:"rate_limited", invalid_json:"invalid_json", image_rejected:"image_rejected", images_unavailable:"images_unavailable", prompt_too_large:"prompt_too_large", not_granted:"not_granted", sampling_disabled:"not_granted"})[c] || "upstream";
+  const out = {code}; if (e && e.text) out.text = e.text; return out;
+}
+apiJson = async function(path, body, signal){
+  if (!CS) throw {code: "not_granted"};
+  if (path !== "/api/read") throw {code: "upstream"};
+  const text = String(body.text || "").slice(0, 40000);
+  let prompt;
+  if (body.kind === "text") prompt = SRV.readPrompt("text", "Az ügyfél leírása:\n" + text.slice(0, 6000));
+  else {
+    const payload = text ? "A dokumentum kinyert szövege (a táblázatok szerkezetét a képeken ellenőrizd):\n" + text : "";
+    prompt = body.kind === "auto" ? SRV.autoPrompt(payload) : body.kind === "ek" ? SRV.ekPrompt(payload) : SRV.readPrompt("doc", payload);
+  }
+  const imgs = (Array.isArray(body.images) ? body.images : []).slice(0, 6).map(im => b64ToBlob(im.data, im.media_type));
+  const opts = {signal}; if (imgs.length) opts.images = imgs;
+  try { return await CS.json(prompt, opts); } catch(e){ throw mapErr(e); }
+};
+apiChat = async function(turns, state, onText, signal){
+  if (!CS) throw {code: "not_granted"};
+  const rules = SRV.CHAT_RULES + SRV.PROD_LIST + "\n" + SRV.LEAD_RULE + "\n\nAz STÉ fül jelenlegi állapota:\n" + (state || "Az STÉ fül még üres.");
+  let t = turns.filter(x => (x.role === "user" || x.role === "assistant") && String(x.content || "").trim()).map(x => ({role: x.role, content: String(x.content).slice(0, 4000)})).slice(-30);
+  while (t.length && t[0].role !== "user") t.shift();
+  if (!t.length) throw {code: "upstream"};
+  try { const r = await CS([{role: "user", content: rules}, ...t], {cache: false, signal, onText: ({text}) => onText({text})}); return {text: r.text}; }
+  catch(e){ throw mapErr(e); }
+};
+</script>
+
+
+</body></html>
