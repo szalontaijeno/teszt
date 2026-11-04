@@ -1,0 +1,7 @@
+{
+  // A Cloudflare-ben lévő Worker neve – ennek egyeznie kell a Cloudflare-felületen látható névvel.
+  "name": "cold-frog-3216",
+  "compatibility_date": "2026-10-01",
+  // Csak fájlokat szolgál ki (a public mappából), szerveroldali kód nélkül.
+  "assets": { "directory": "./public" }
+}
