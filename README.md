@@ -11,4 +11,4 @@ Tesztrepó a GitHub és a Claude összekapcsolásának kipróbálásához.
 
 ## Cloudflare
 
-A `ste-kalkulator/wrangler.jsonc` köti a mappát a Cloudflare `cold-frog-3216` Workeréhez. Ha a Worker össze van kötve ezzel a repóval (Cloudflare: Settings → Builds, gyökérmappa: `ste-kalkulator`), minden feltöltés után magától frissül.
+A `ste-kalkulator/wrangler.jsonc` köti a mappát a Cloudflare `cold-frog-3216` Workeréhez. A Worker 2026. november 4. óta össze van kötve ezzel a repóval (Cloudflare: Settings → Builds, gyökérmappa: `/ste-kalkulator`), így minden feltöltés után magától frissül.
